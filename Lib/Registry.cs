@@ -6,7 +6,7 @@ internal static class Registry
 {
     public static readonly List<CommandRegistryKey> commands =
     [
-        new CommandRegistryKey<OpenPedestrianGateCommand>("/start", "Apri il cancello pedonale"),
+        new CommandRegistryKey<StartCommand>("/start", "Letsgo"),
         new CommandRegistryKey<OpenAutomaticGateCommand>(
             "/openauto",
             "Apri il cancello automatico"
