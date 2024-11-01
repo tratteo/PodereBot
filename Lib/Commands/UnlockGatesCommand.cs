@@ -32,7 +32,7 @@ internal class UnlockGatesCommand(
         kbd.AddButton("Blocca", EncodeCallbackQueryData(new { hours = -1 }));
         await arguments.Client.SendTextMessageAsync(
             arguments.Message.Chat.Id,
-            "Per quante ore da ora vuoi abilitare i cancelli?.\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
+            "Per quante ore vuoi che i cancelli siano abilitati a tutti?\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
             replyMarkup: kbd,
             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html
         );
