@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishSingleFile>true</PublishSingleFile>
     <Nullable>enable</Nullable>
+    <RestoreSources>
+      https://pkgs.dev.azure.com/tgbots/Telegram.Bot/_packaging/release/nuget/v3/index.json
+    </RestoreSources>
   </PropertyGroup>
 
   <ItemGroup>
