@@ -11,7 +11,11 @@ internal static class Registry
             "/openauto",
             "Apri il cancello automatico"
         ),
-        new CommandRegistryKey<OpenPedestrianGateCommand>("/openped", "Apri il cancello pedonale"),
+        new CommandRegistryKey<OpenPedestrianGateCommand>(
+            "/openped",
+            "Apri il cancello pedonale",
+            admin: true
+        ),
         new CommandRegistryKey<SendPositionCommand>("/sendpos", "Ti mando la posizione di casa"),
         new CommandRegistryKey<UnlockGatesCommand>(
             "/gates",
