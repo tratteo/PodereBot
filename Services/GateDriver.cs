@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PodereBot.Services;
@@ -20,13 +19,14 @@ internal class GateDriver(ILogger<GateDriver> logger, Serial serialCom, IConfigu
         switch (gate)
         {
             case GateId.automatic:
-                pin = configuration.GetValue<int>("AUTOMATIC_GATE_PIN");
+                pin = configuration.GetValue<int>("Serial:AutomaticGatePin");
                 break;
             case GateId.pedestrian:
-                pin = configuration.GetValue<int>("PEDESTRIAN_GATE_PIN");
+                pin = configuration.GetValue<int>("Serial:PedestrianGatePin");
                 break;
 
         }
+        logger.LogDebug("serial pin: {p}", pin);
         serialCom.Write($"h{pin}");
         await Task.Delay(1000);
         serialCom.Write($"l{pin}");
