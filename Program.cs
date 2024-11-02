@@ -17,9 +17,12 @@ var host = Host.CreateDefaultBuilder(args)
             options => options.SuppressStatusMessages = true
         );
         services.AddCommands();
+
         services.AddSingleton<Serial>();
         services.AddSingleton<GateDriver>();
+        services.AddSingleton<Skin>();
         services.AddSingleton<Database>();
+
         services.AddHostedService<BotHostedService>();
     })
     .ConfigureAppConfiguration(builder => builder.AddDotNetEnv())

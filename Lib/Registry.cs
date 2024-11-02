@@ -7,19 +7,25 @@ internal static class Registry
     public static readonly List<CommandRegistryKey> commands =
     [
         new CommandRegistryKey<StartCommand>("/start", "Letsgo"),
+        new CommandRegistryKey<ToggleGatesLightCommand>(
+            "/gatelight",
+            "Accendo/spengo le luci dei cancelli 💡",
+            admin: true
+        ),
         new CommandRegistryKey<OpenAutomaticGateCommand>(
             "/openauto",
-            "Apri il cancello automatico"
+            "Ti apro il cancello automatico (forse 😼)",
+            admin: true
         ),
         new CommandRegistryKey<OpenPedestrianGateCommand>(
             "/openped",
-            "Apri il cancello pedonale",
+            "Ti apro il cancello pedonale (forse 😼)",
             admin: true
         ),
-        new CommandRegistryKey<SendPositionCommand>("/sendpos", "Ti mando la posizione di casa"),
+        new CommandRegistryKey<SendPositionCommand>("/sendpos", "Ti mando la posizione di casa 📍"),
         new CommandRegistryKey<UnlockGatesCommand>(
             "/gates",
-            "Abilita o disabilita l'apertura dei cancelli agli utenti",
+            "Abilito o disabilito l'apertura dei cancelli agli utenti 🔐",
             admin: true
         )
     ];

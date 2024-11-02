@@ -10,8 +10,9 @@ namespace PodereBot.Lib.Commands;
 internal class UnlockGatesCommand(
     ILogger<UnlockGatesCommand> logger,
     Database database,
+    Skin skin,
     IConfiguration configuration
-) : Command(configuration)
+) : Command(skin, configuration)
 {
     private readonly ILogger<UnlockGatesCommand> logger = logger;
     private readonly Database database = database;
@@ -32,7 +33,7 @@ internal class UnlockGatesCommand(
         kbd.AddButton("Blocca", EncodeCallbackQueryData(new { hours = -1 }));
         await arguments.Client.SendTextMessageAsync(
             arguments.Message.Chat.Id,
-            "Per quante ore vuoi che i cancelli siano abilitati a tutti?\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
+            "Per quante ore vuoi che i cancelli siano abilitati a tutti 🕓?\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
             replyMarkup: kbd,
             parseMode: Telegram.Bot.Types.Enums.ParseMode.Html
         );
@@ -49,7 +50,7 @@ internal class UnlockGatesCommand(
             database.Edit((data) => data.GatesOpenAccessExpirationDate = null);
             await arguments.Client.SendTextMessageAsync(
                 arguments.Message.Chat.Id,
-                $"I cancelli sono bloccati. Solo gli amminstratori possono utilizzarli"
+                $"I cancelli sono bloccati 😼, solo gli amminstratori possono utilizzarli"
             );
         }
         else
@@ -58,7 +59,7 @@ internal class UnlockGatesCommand(
             database.Edit((data) => data.GatesOpenAccessExpirationDate = date);
             await arguments.Client.SendTextMessageAsync(
                 arguments.Message.Chat.Id,
-                $"I cancelli sono aperti fino al {date}"
+                $"I cancelli sono aperti fino al {date} 🙀"
             );
         }
         await arguments.Client.AnswerCallbackQueryAsync(update.CallbackQuery!.Id);

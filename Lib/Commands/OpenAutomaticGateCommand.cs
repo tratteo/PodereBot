@@ -3,21 +3,21 @@ using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace PodereBot.Lib.Commands;
 
-internal class OpenAutomaticGateCommand : Command
+internal class OpenAutomaticGateCommand(
+    Skin skin,
+    GateDriver gateDriver,
+    Database db,
+    IConfiguration configuration,
+    ILogger<OpenAutomaticGateCommand> logger
+) : Command(skin, configuration)
 {
-    private readonly GateDriver gateDriver;
-    private readonly Database db;
-    private readonly ILogger<OpenAutomaticGateCommand> logger;
-
-    public OpenAutomaticGateCommand(GateDriver gateDriver, Database db, IConfiguration configuration, ILogger<OpenAutomaticGateCommand> logger) : base(configuration)
-    {
-        this.gateDriver = gateDriver;
-        this.db = db;
-        this.logger = logger;
-    }
+    private readonly GateDriver gateDriver = gateDriver;
+    private readonly Database db = db;
+    private readonly ILogger<OpenAutomaticGateCommand> logger = logger;
 
     protected override async Task ExecuteInternal(CommandArguments arguments)
     {
@@ -28,15 +28,28 @@ internal class OpenAutomaticGateCommand : Command
         }
         else
         {
-            var gatesOpen = db.Data.GatesOpenAccessExpirationDate != null || db.Data.GatesOpenAccessExpirationDate > DateTime.Now;
+            var gatesOpen =
+                db.Data.GatesOpenAccessExpirationDate != null
+                || db.Data.GatesOpenAccessExpirationDate > DateTime.Now;
             if (!gatesOpen)
             {
-                await arguments.Client.SendAnimationAsync(arguments.Message.Chat.Id, InputFile.FromString("https://media1.tenor.com/m/dz-seLKqRe4AAAAd/out-the-office.gif"), caption: "I cancelli sono bloccati al momento");
+                await arguments.Client.SendAssetAsync(
+                    arguments.Message.Chat.Id,
+                    skin.Schema.Forbidden,
+                    caption: "I cancelli sono bloccati al momento ❌"
+                );
+                return;
             }
             else
             {
                 await gateDriver.Open(GateDriver.GateId.automatic);
             }
         }
+
+        await arguments.Client.SendChatActionAsync(arguments.Message.Chat.Id, ChatAction.Typing);
+        await arguments.Client.SendTextMessageAsync(
+            arguments.Message.Chat.Id,
+            "Ho aperto il cancello automatico 🐱"
+        );
     }
 }

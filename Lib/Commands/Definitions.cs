@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using PodereBot.Services;
 using Telegram.Bot;
+using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -15,9 +17,10 @@ internal readonly struct CommandArguments
     public readonly bool Admin { get; init; }
 }
 
-internal abstract class Command(IConfiguration configuration)
+internal abstract class Command(Skin skin, IConfiguration configuration)
 {
     protected readonly Guid instanceId = Guid.NewGuid();
+    protected readonly Skin skin = skin;
     protected readonly IConfiguration configuration = configuration;
 
     public async Task Execute(CommandArguments arguments)
@@ -31,17 +34,20 @@ internal abstract class Command(IConfiguration configuration)
                     arguments.Message.Chat.Id,
                     ChatAction.ChooseSticker
                 );
-                await arguments.Client.SendAnimationAsync(
+                await arguments.Client.SendAssetAsync(
                     arguments.Message.Chat.Id,
-                    InputFile.FromString(
-                        "https://media.giphy.com/media/N4xCVPenanVcI/giphy.gif?cid=ecf05e47z2k4t26y8uy0f6hn38wa3fv7yvsu7d7a5setfia0&ep=v1_gifs_related&rid=giphy.gif&ct=g"
-                    ),
+                    skin.Schema.Unauthorized,
                     caption: "Non hai abbastanza poteri canide"
                 );
                 return;
             }
         }
         await ExecuteInternal(arguments);
+        // await arguments.Client.SendTextMessageAsync(
+        //     arguments.Message.Chat.Id,
+        //     "👌",
+        //     replyParameters: new ReplyParameters { MessageId = arguments.Message.MessageId }
+        // );
     }
 
     protected string EncodeCallbackQueryData(object data) =>
