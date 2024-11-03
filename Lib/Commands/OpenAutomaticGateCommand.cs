@@ -33,10 +33,10 @@ internal class OpenAutomaticGateCommand(
                 || db.Data.GatesOpenAccessExpirationDate > DateTime.Now;
             if (!gatesOpen)
             {
-                await arguments.Client.SendAssetAsync(
-                    arguments.Message,
-                    skin.Schema.Forbidden,
-                    caption: "I cancelli sono bloccati al momento ❌"
+                await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.Forbidden);
+                await arguments.Client.SendTextMessageAsync(
+                    arguments.Message.Chat.Id,
+                    "I cancelli sono bloccati al momento ❌"
                 );
                 return;
             }
@@ -47,6 +47,7 @@ internal class OpenAutomaticGateCommand(
         }
 
         await arguments.Client.SendChatActionAsync(arguments.Message.Chat.Id, ChatAction.Typing);
+        await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.AutomaticGateOpen);
         await arguments.Client.SendTextMessageAsync(
             arguments.Message.Chat.Id,
             "Ho aperto il cancello automatico 🐱"

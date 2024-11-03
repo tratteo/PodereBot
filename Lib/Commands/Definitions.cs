@@ -34,10 +34,10 @@ internal abstract class Command(Skin skin, IConfiguration configuration)
                     arguments.Message.Chat.Id,
                     ChatAction.ChooseSticker
                 );
-                await arguments.Client.SendAssetAsync(
-                    arguments.Message,
-                    skin.Schema.Unauthorized,
-                    caption: "Non hai abbastanza poteri canide"
+                await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.Unauthorized);
+                await arguments.Client.SendTextMessageAsync(
+                    arguments.Message.Chat.Id,
+                    "Non hai abbastanza poteri canide 🐶"
                 );
                 return;
             }

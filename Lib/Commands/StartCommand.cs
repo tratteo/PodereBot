@@ -9,10 +9,10 @@ internal class StartCommand(Skin skin, IConfiguration configuration) : Command(s
 {
     protected override async Task ExecuteInternal(CommandArguments arguments)
     {
-        await arguments.Client.SendAssetAsync(
-            arguments.Message,
-            skin.Schema.Start,
-            caption: "Per i comandi usa il pannello accanto alla tastiera 🐈"
+        await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.Start);
+        await arguments.Client.SendTextMessageAsync(
+            arguments.Message.Chat.Id,
+            "Per i comandi usa il pannello accanto alla tastiera 🐈"
         );
     }
 }

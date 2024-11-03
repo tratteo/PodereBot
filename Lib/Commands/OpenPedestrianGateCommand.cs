@@ -29,10 +29,10 @@ internal class OpenPedestrianGateCommand(
                 || db.Data.GatesOpenAccessExpirationDate > DateTime.Now;
             if (!gatesOpen)
             {
-                await arguments.Client.SendAssetAsync(
-                    arguments.Message,
-                    skin.Schema.Forbidden,
-                    caption: "I cancelli sono bloccati al momento ❌"
+                await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.Forbidden);
+                await arguments.Client.SendTextMessageAsync(
+                    arguments.Message.Chat.Id,
+                    "I cancelli sono bloccati al momento ❌"
                 );
                 return;
             }
@@ -42,6 +42,7 @@ internal class OpenPedestrianGateCommand(
             }
         }
         await arguments.Client.SendChatActionAsync(arguments.Message.Chat.Id, ChatAction.Typing);
+        await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.PedestrianGateOpen);
         await arguments.Client.SendTextMessageAsync(
             arguments.Message.Chat.Id,
             "Ho aperto il cancello pedonale 🐱"

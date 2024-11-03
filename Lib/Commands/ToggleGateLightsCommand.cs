@@ -22,8 +22,8 @@ internal class ToggleGatesLightCommand(
     protected override async Task ExecuteInternal(CommandArguments arguments)
     {
         await gateDriver.ToggleLights();
-        await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.GatesLight);
         await arguments.Client.SendChatActionAsync(arguments.Message.Chat.Id, ChatAction.Typing);
+        await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.GatesLight);
         await arguments.Client.SendTextMessageAsync(
             arguments.Message.Chat.Id,
             "Ho acceso o spento le luci del cancello. Io non posso sapere in che stato sono, vai a guardare 😿"

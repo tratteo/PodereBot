@@ -101,9 +101,7 @@ public static class Extensions
     internal static async Task SendAssetAsync(
         this TelegramBotClient client,
         Message message,
-        Asset? asset,
-        IReplyMarkup? replyMarkup = null,
-        string? caption = null
+        Asset? asset
     )
     {
         if (asset == null)
@@ -112,29 +110,18 @@ public static class Extensions
         switch (asset.Type)
         {
             case AssetType.video:
-                await client.SendVideoAsync(
-                    message.Chat.Id,
-                    InputFile.FromString(asset.Source),
-                    replyMarkup: replyMarkup,
-                    caption: caption
-                );
+                await client.SendVideoAsync(message.Chat.Id, InputFile.FromString(asset.Source));
                 break;
             case AssetType.image:
                 break;
             case AssetType.gif:
                 await client.SendAnimationAsync(
                     message.Chat.Id,
-                    InputFile.FromString(asset.Source),
-                    replyMarkup: replyMarkup,
-                    caption: caption
+                    InputFile.FromString(asset.Source)
                 );
                 break;
             case AssetType.sticker:
-                await client.SendStickerAsync(
-                    message.Chat.Id,
-                    InputFile.FromString(asset.Source),
-                    replyMarkup: replyMarkup
-                );
+                await client.SendStickerAsync(message.Chat.Id, InputFile.FromString(asset.Source));
                 break;
         }
     }

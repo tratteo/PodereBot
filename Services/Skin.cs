@@ -36,7 +36,6 @@ internal class SkinSchema
     public required Asset? PedestrianGateOpen { get; init; }
     public required Asset? GatesLight { get; init; }
     public required Asset? Forbidden { get; init; }
-    public required Asset? CommandReaction { get; init; }
 
     public static SkinSchema Default()
     {
@@ -57,7 +56,6 @@ internal class SkinSchema
             PedestrianGateOpen = null,
             Forbidden = null,
             GatesLight = null,
-            CommandReaction = null
         };
     }
 }
