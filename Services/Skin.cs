@@ -35,7 +35,7 @@ internal class SkinSchema
     public required Asset? AutomaticGateOpen { get; init; }
     public required Asset? PedestrianGateOpen { get; init; }
     public required Asset? GatesLight { get; init; }
-    public required Asset? Forbidden { get; init; }
+    public required Asset? Unavailable { get; init; }
 
     public static SkinSchema Default()
     {
@@ -54,7 +54,7 @@ internal class SkinSchema
             },
             AutomaticGateOpen = null,
             PedestrianGateOpen = null,
-            Forbidden = null,
+            Unavailable = null,
             GatesLight = null,
         };
     }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
@@ -7,45 +8,21 @@ namespace PodereBot.Lib.Commands;
 
 internal class OpenPedestrianGateCommand(
     Skin skin,
-    Database db,
     GateDriver gateDriver,
-    IConfiguration configuration
-) : Command(skin, configuration)
+    Database db,
+    IConfiguration configuration,
+    ILogger<OpenPedestrianGateCommand> logger
+)
+    : AbstractOpenGateCommand(
+        skin,
+        gateDriver,
+        db,
+        configuration,
+        logger,
+        GateDriver.GateId.pedestrian
+    )
 {
-    private readonly Database db = db;
-    private readonly GateDriver gateDriver = gateDriver;
+    protected override string GateName => "pedonale";
 
-    protected override async Task ExecuteInternal(CommandArguments arguments)
-    {
-        var admins = configuration.GetSection("Admins").Get<long[]>()?.ToList() ?? [];
-        if (admins.Contains(arguments.Message.From!.Id))
-        {
-            await gateDriver.Open(GateDriver.GateId.pedestrian);
-        }
-        else
-        {
-            var gatesOpen =
-                db.Data.GatesOpenAccessExpirationDate != null
-                || db.Data.GatesOpenAccessExpirationDate > DateTime.Now;
-            if (!gatesOpen)
-            {
-                await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.Forbidden);
-                await arguments.Client.SendTextMessageAsync(
-                    arguments.Message.Chat.Id,
-                    "I cancelli sono bloccati al momento ❌"
-                );
-                return;
-            }
-            else
-            {
-                await gateDriver.Open(GateDriver.GateId.pedestrian);
-            }
-        }
-        await arguments.Client.SendChatActionAsync(arguments.Message.Chat.Id, ChatAction.Typing);
-        await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.PedestrianGateOpen);
-        await arguments.Client.SendTextMessageAsync(
-            arguments.Message.Chat.Id,
-            "Ho aperto il cancello pedonale 🐱"
-        );
-    }
+    protected override Asset? Asset => skin.Schema.PedestrianGateOpen;
 }
