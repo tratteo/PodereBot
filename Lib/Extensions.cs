@@ -16,47 +16,126 @@ public static class Extensions
         }
     }
 
-    internal static async Task<Message?> SendAssetAsync(
+    public static ReactionTypeEmoji RandomEmoji(this Message emoji)
+    {
+        List<string> available =
+        [
+            "👍",
+            "👎",
+            "❤",
+            "🔥",
+            "🥰",
+            "👏",
+            "😁",
+            "🤔",
+            "🤯",
+            "😱",
+            "🤬",
+            "😢",
+            "🎉",
+            "🤩",
+            "🤮",
+            "💩",
+            "🙏",
+            "👌",
+            "🕊",
+            "🤡",
+            "🥱",
+            "🥴",
+            "😍",
+            "🐳",
+            "❤‍🔥",
+            "🌚",
+            "🌭",
+            "💯",
+            "🤣",
+            "⚡",
+            "🍌",
+            "🏆",
+            "💔",
+            "🤨",
+            "😐",
+            "🍓",
+            "🍾",
+            "💋",
+            "🖕",
+            "😈",
+            "😴",
+            "😭",
+            "🤓",
+            "👻",
+            "👨‍💻",
+            "👀",
+            "🎃",
+            "🙈",
+            "😇",
+            "😨",
+            "🤝",
+            "✍",
+            "🤗",
+            "🫡",
+            "🎅",
+            "🎄",
+            "☃",
+            "💅",
+            "🤪",
+            "🗿",
+            "🆒",
+            "💘",
+            "🙉",
+            "🦄",
+            "😘",
+            "💊",
+            "🙊",
+            "😎",
+            "👾",
+            "🤷‍♂",
+            "🤷",
+            "🤷‍♀",
+            "😡"
+        ];
+        Random random = new();
+        return new ReactionTypeEmoji() { Emoji = available[random.Next(0, available.Count)] };
+    }
+
+    internal static async Task SendAssetAsync(
         this TelegramBotClient client,
-        ChatId chatId,
+        Message message,
         Asset? asset,
         IReplyMarkup? replyMarkup = null,
         string? caption = null
     )
     {
         if (asset == null)
-            return null;
+            return;
 
-        return asset.Type switch
+        switch (asset.Type)
         {
-            AssetType.video
-                => await client.SendVideoAsync(
-                    chatId,
+            case AssetType.video:
+                await client.SendVideoAsync(
+                    message.Chat.Id,
                     InputFile.FromString(asset.Source),
                     replyMarkup: replyMarkup,
                     caption: caption
-                ),
-            AssetType.gif
-                => await client.SendAnimationAsync(
-                    chatId,
+                );
+                break;
+            case AssetType.image:
+                break;
+            case AssetType.gif:
+                await client.SendAnimationAsync(
+                    message.Chat.Id,
                     InputFile.FromString(asset.Source),
                     replyMarkup: replyMarkup,
                     caption: caption
-                ),
-            AssetType.sticker
-                => await client.SendStickerAsync(
-                    chatId,
+                );
+                break;
+            case AssetType.sticker:
+                await client.SendStickerAsync(
+                    message.Chat.Id,
                     InputFile.FromString(asset.Source),
                     replyMarkup: replyMarkup
-                ),
-            AssetType.image
-                => await client.SendPhotoAsync(
-                    chatId,
-                    InputFile.FromString(asset.Source),
-                    replyMarkup: replyMarkup,
-                    caption: caption
-                ),
-            _ => null,
-        };
+                );
+                break;
+        }
     }
 }

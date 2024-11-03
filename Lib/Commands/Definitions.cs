@@ -35,7 +35,7 @@ internal abstract class Command(Skin skin, IConfiguration configuration)
                     ChatAction.ChooseSticker
                 );
                 await arguments.Client.SendAssetAsync(
-                    arguments.Message.Chat.Id,
+                    arguments.Message,
                     skin.Schema.Unauthorized,
                     caption: "Non hai abbastanza poteri canide"
                 );
@@ -43,11 +43,12 @@ internal abstract class Command(Skin skin, IConfiguration configuration)
             }
         }
         await ExecuteInternal(arguments);
-        // await arguments.Client.SendTextMessageAsync(
-        //     arguments.Message.Chat.Id,
-        //     "👌",
-        //     replyParameters: new ReplyParameters { MessageId = arguments.Message.MessageId }
-        // );
+
+        await arguments.Client.SetMessageReactionAsync(
+            arguments.Message.Chat.Id,
+            arguments.Message.MessageId,
+            [arguments.Message.RandomEmoji()]
+        );
     }
 
     protected string EncodeCallbackQueryData(object data) =>

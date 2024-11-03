@@ -30,7 +30,7 @@ internal class OpenPedestrianGateCommand(
             if (!gatesOpen)
             {
                 await arguments.Client.SendAssetAsync(
-                    arguments.Message.Chat.Id,
+                    arguments.Message,
                     skin.Schema.Forbidden,
                     caption: "I cancelli sono bloccati al momento ❌"
                 );

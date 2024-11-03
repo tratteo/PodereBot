@@ -36,6 +36,7 @@ internal class SkinSchema
     public required Asset? PedestrianGateOpen { get; init; }
     public required Asset? GatesLight { get; init; }
     public required Asset? Forbidden { get; init; }
+    public required Asset? CommandReaction { get; init; }
 
     public static SkinSchema Default()
     {
@@ -44,31 +45,19 @@ internal class SkinSchema
             Metadata = new Metadata() { Name = "Default", Author = "trat" },
             Start = new Asset()
             {
-                Source = "https://media1.tenor.com/m/w8kAoMlhgjQAAAAd/so-it-begins-raining.gif",
+                Source = "https://media1.tenor.com/m/NXMs9_FlGpcAAAAd/rage-emoji-rage.gif",
                 Type = AssetType.gif
             },
             Unauthorized = new Asset()
             {
-                Source = "https://media.giphy.com/media/N4xCVPenanVcI/giphy.gif",
-                Type = AssetType.gif
-            },
-            AutomaticGateOpen = new Asset()
-            {
-                Source =
-                    "https://media1.tenor.com/m/p9pPNUHetWIAAAAd/steve-carell-its-britney-bitch.gif",
-                Type = AssetType.gif
-            },
-            PedestrianGateOpen = new Asset()
-            {
-                Source = "https://media1.tenor.com/m/Y5Q3Or-lY_UAAAAd/aragorn.gif",
-                Type = AssetType.gif
-            },
-            GatesLight = null,
-            Forbidden = new Asset()
-            {
                 Source = "https://media1.tenor.com/m/SMiE27y-ExsAAAAd/ban-banned.gif",
                 Type = AssetType.gif
-            }
+            },
+            AutomaticGateOpen = null,
+            PedestrianGateOpen = null,
+            Forbidden = null,
+            GatesLight = null,
+            CommandReaction = null
         };
     }
 }
