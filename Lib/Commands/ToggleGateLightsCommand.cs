@@ -8,15 +8,15 @@ using Telegram.Bot.Types.Enums;
 namespace PodereBot.Lib.Commands;
 
 internal class ToggleGatesLightCommand(
-    GateDriver gateDriver,
-    Skin skin,
-    Database db,
+    GateDriverService gateDriver,
+    SkinService skin,
+    DatabaseService db,
     IConfiguration configuration,
     ILogger<ToggleGatesLightCommand> logger
 ) : Command(skin, configuration)
 {
-    private readonly GateDriver gateDriver = gateDriver;
-    private readonly Database db = db;
+    private readonly GateDriverService gateDriver = gateDriver;
+    private readonly DatabaseService db = db;
     private readonly ILogger<ToggleGatesLightCommand> logger = logger;
 
     protected override async Task ExecuteInternal(CommandArguments arguments)

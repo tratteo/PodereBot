@@ -18,10 +18,10 @@ var host = Host.CreateDefaultBuilder(args)
         );
         services.AddCommands();
 
-        services.AddSingleton<Serial>();
-        services.AddSingleton<GateDriver>();
-        services.AddSingleton<Skin>();
-        services.AddSingleton<Database>();
+        services.AddSingleton<SerialService>();
+        services.AddSingleton<GateDriverService>();
+        services.AddSingleton<SkinService>();
+        services.AddSingleton<DatabaseService>();
 
         services.AddHostedService<BotHostedService>();
     })

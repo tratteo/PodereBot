@@ -5,7 +5,8 @@ using Telegram.Bot.Types;
 
 namespace PodereBot.Lib.Commands;
 
-internal class StartCommand(Skin skin, IConfiguration configuration) : Command(skin, configuration)
+internal class StartCommand(SkinService skin, IConfiguration configuration)
+    : Command(skin, configuration)
 {
     protected override async Task ExecuteInternal(CommandArguments arguments)
     {

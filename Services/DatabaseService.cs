@@ -10,18 +10,18 @@ public class DatabaseSchema
     public DateTime? GatesOpenAccessExpirationDate { get; set; } = null;
 
     public DatabaseSchema Clone() =>
-        new DatabaseSchema { GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate };
+        new() { GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate };
 }
 
-internal class Database
+internal class DatabaseService
 {
     private static readonly string DB_PATH = Path.Join(AppContext.BaseDirectory, "db.json");
-    private readonly ILogger<Database> logger;
+    private readonly ILogger<DatabaseService> logger;
 
     private readonly DatabaseSchema data;
     public DatabaseSchema Data => data.Clone();
 
-    public Database(ILogger<Database> logger)
+    public DatabaseService(ILogger<DatabaseService> logger)
     {
         this.logger = logger;
         if (File.Exists(DB_PATH))

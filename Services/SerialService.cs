@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging;
 
 namespace PodereBot.Services;
 
-internal class Serial
+internal class SerialService
 {
     private const int BAUD_RATE = 115200;
 
     private readonly ILogger logger;
     private readonly SerialPort? serialPort;
 
-    public Serial(ILogger<Serial> logger, IConfiguration configuration)
+    public SerialService(ILogger<SerialService> logger, IConfiguration configuration)
     {
         this.logger = logger;
         string? port = configuration.GetValue<string>("Serial:Port")!;

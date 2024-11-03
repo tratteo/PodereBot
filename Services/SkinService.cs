@@ -60,12 +60,12 @@ internal class SkinSchema
     }
 }
 
-internal class Skin
+internal class SkinService
 {
-    private readonly ILogger<Skin> logger;
+    private readonly ILogger<SkinService> logger;
     public SkinSchema Schema { get; init; }
 
-    public Skin(ILogger<Skin> logger, IConfiguration configuration)
+    public SkinService(ILogger<SkinService> logger, IConfiguration configuration)
     {
         this.logger = logger;
         var skinName = configuration.GetValue<string>("Skin");

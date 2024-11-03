@@ -2,9 +2,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 
-internal class GateDriver(
-    ILogger<GateDriver> logger,
-    Serial serialCom,
+internal class GateDriverService(
+    ILogger<GateDriverService> logger,
+    SerialService serialCom,
     IConfiguration configuration
 )
 {
@@ -15,7 +15,7 @@ internal class GateDriver(
     }
 
     private readonly ILogger logger = logger;
-    private readonly Serial serialCom = serialCom;
+    private readonly SerialService serialCom = serialCom;
     private readonly IConfiguration configuration = configuration;
 
     public async Task ToggleLights()

@@ -9,13 +9,13 @@ namespace PodereBot.Lib.Commands;
 
 internal class UnlockGatesCommand(
     ILogger<UnlockGatesCommand> logger,
-    Database database,
-    Skin skin,
+    DatabaseService database,
+    SkinService skin,
     IConfiguration configuration
 ) : Command(skin, configuration)
 {
     private readonly ILogger<UnlockGatesCommand> logger = logger;
-    private readonly Database database = database;
+    private readonly DatabaseService database = database;
 
     protected override async Task ExecuteInternal(CommandArguments arguments)
     {

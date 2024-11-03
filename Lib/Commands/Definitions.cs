@@ -17,10 +17,10 @@ internal readonly struct CommandArguments
     public readonly bool Admin { get; init; }
 }
 
-internal abstract class Command(Skin skin, IConfiguration configuration)
+internal abstract class Command(SkinService skin, IConfiguration configuration)
 {
     protected readonly Guid instanceId = Guid.NewGuid();
-    protected readonly Skin skin = skin;
+    protected readonly SkinService skin = skin;
     protected readonly IConfiguration configuration = configuration;
 
     public async Task Execute(CommandArguments arguments)

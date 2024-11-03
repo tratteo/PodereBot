@@ -10,18 +10,18 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace PodereBot.Lib.Commands;
 
 internal abstract class AbstractOpenGateCommand(
-    Skin skin,
-    GateDriver gateDriver,
-    Database db,
+    SkinService skin,
+    GateDriverService gateDriver,
+    DatabaseService db,
     IConfiguration configuration,
     ILogger<AbstractOpenGateCommand> logger,
-    GateDriver.GateId gateId
+    GateDriverService.GateId gateId
 ) : Command(skin, configuration)
 {
-    private readonly GateDriver gateDriver = gateDriver;
-    private readonly Database db = db;
+    private readonly GateDriverService gateDriver = gateDriver;
+    private readonly DatabaseService db = db;
     private readonly ILogger<AbstractOpenGateCommand> logger = logger;
-    private readonly GateDriver.GateId gateId = gateId;
+    private readonly GateDriverService.GateId gateId = gateId;
     private Message? confirmationMessage;
 
     protected abstract string GateName { get; }
