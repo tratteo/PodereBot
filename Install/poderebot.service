@@ -1,0 +1,10 @@
+[Unit]
+Description=Telegram Podere bot
+After=network.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=~/PodereBot/run.sh
+
+[Install]
+WantedBy=multi-user.target
