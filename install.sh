@@ -14,12 +14,12 @@ trap 'error_handler $LINENO' ERR
 
 # ===== SCRIPTS GENERATION
 echo - generating scripts
-run="#!bin/bash
-./home/$user/PodereBot/build/PodereBot"
+run="#!/bin/bash
+/home/$user/PodereBot/build/PodereBot"
 echo -e "$run" > ./run.sh
 chmod +x ./run.sh
 
-patch="#!bin/bash
+patch="#!/bin/bash
 git fetch --all
 git reset --hard
 git clean -fd
