@@ -42,10 +42,13 @@ internal class BotHostedService : IHostedService
         var skinData =
             $"Skin caricata: {skin.Schema.Metadata.Name} by {skin.Schema.Metadata.Author}";
         await client.SetMyDescriptionAsync(
-            $"Che vuoi da Mikki? I canidi fanno schifo.\n\n{skinData}",
+            $"Che vuoi? \n\n{skinData}",
             cancellationToken: cancellationToken
         );
-        await client.SetMyShortDescriptionAsync(skinData, cancellationToken: cancellationToken);
+        await client.SetMyShortDescriptionAsync(
+            $"Che vuoi? \n\n{skinData}",
+            cancellationToken: cancellationToken
+        );
         await client.SetMyCommandsAsync(
             Registry.commands.ConvertAll(
                 c => new BotCommand() { Command = c.command, Description = c.description }
@@ -64,6 +67,10 @@ internal class BotHostedService : IHostedService
 
     private async Task OnMessage(Message msg, UpdateType type)
     {
+        if (msg.Date - DateTime.Now > TimeSpan.FromSeconds(30))
+        {
+            return;
+        }
         logger.LogInformation("Received {type} '{t}' in {c}", type, msg.Text, msg.Chat);
         // logger.LogDebug("raw message: {r}", JsonConvert.SerializeObject(msg));
         var match = Registry.commands.FirstOrDefault(c => c.command == msg.Text);
