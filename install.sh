@@ -42,6 +42,7 @@ After=network.target network-online.target
 
 [Service]
 Type=simple
+User=$user
 ExecStart=/home/$user/PodereBot/run.sh
 
 [Install]
@@ -49,8 +50,8 @@ WantedBy=multi-user.target"
 echo -e "$service" > /etc/systemd/system/poderebot.service
 
 echo - reloading and starting daemon
-systemctl daemon-reload
-systemctl enable poderebot.service
-systemctl restart poderebot.service
-systemctl status poderebot.service
+sudo systemctl daemon-reload
+sudo systemctl enable poderebot.service
+sudo systemctl restart poderebot.service
+sudo systemctl status poderebot.service
 echo - installation completed
