@@ -12,6 +12,11 @@ fi
 user="$1"
 trap 'error_handler $LINENO' ERR
 
+if ! id -u "$user" &> /dev/null; then
+    echo "user [$pi] does not exist in the current system"
+    exit 1
+fi
+
 # ===== SCRIPTS GENERATION
 echo - generating scripts
 run="#!/bin/bash
@@ -25,8 +30,8 @@ git reset --hard
 git clean -fd
 git pull
 dotnet build --output build
-sudo systemctl restart poderebot.service
-sudo systemctl status poderebot.service"
+systemctl restart poderebot.service
+systemctl status poderebot.service"
 echo -e "$patch" > ./patch.sh
 chmod +x ./patch.sh
 
@@ -52,6 +57,4 @@ echo -e "$service" > /etc/systemd/system/poderebot.service
 echo - reloading and starting daemon
 sudo systemctl daemon-reload
 sudo systemctl enable poderebot.service
-sudo systemctl restart poderebot.service
-sudo systemctl status poderebot.service
 echo - installation completed
