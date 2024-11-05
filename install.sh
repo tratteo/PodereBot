@@ -1,4 +1,5 @@
 #!/bin/bash
+
 error_handler() {
     echo "error occurred at line $1"
     exit 1
@@ -19,6 +20,13 @@ if ! id -u "$user" &> /dev/null; then
 fi
 
 # ===== SCRIPTS GENERATION
+echo - generating scripts
+run="#!/bin/bash
+cd /home/$user/PodereBot/build
+./PodereBot"
+echo -e "$run" > ./run.sh
+chmod +x ./run.sh
+
 patch="#!/bin/bash
 git fetch --all
 git reset --hard
@@ -43,8 +51,7 @@ After=network.target network-online.target
 [Service]
 Type=simple
 User=$user
-ExecStart=/home/$user/PodereBot/build/PodereBot
-Environment=DOTNET_ROOT=/opt/dotnet
+ExecStart=/home/$user/PodereBot/run.sh
 
 [Install]
 WantedBy=multi-user.target"
