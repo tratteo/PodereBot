@@ -12,7 +12,8 @@ internal class StartCommand(Skin skin, IConfiguration configuration) : Command(s
         await arguments.Client.SendAsset(arguments.Message, skin.Schema.Start);
         await arguments.Client.SendMessage(
             arguments.Message.Chat.Id,
-            "Per i comandi usa il pannello accanto alla tastiera 🐈"
+            "Per i comandi usa il pannello accanto alla tastiera 🐈",
+            disableNotification: true
         );
     }
 }

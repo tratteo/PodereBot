@@ -55,6 +55,7 @@ internal class BotHostedService : IHostedService
             ),
             cancellationToken: cancellationToken
         );
+        await client.SendMessage(962154266, "Presente 😼!", cancellationToken: cancellationToken);
         client.OnMessage += OnMessage;
         logger.LogInformation("@{u} is running", me.Username);
     }

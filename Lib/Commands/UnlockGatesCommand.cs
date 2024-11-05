@@ -35,7 +35,8 @@ internal class UnlockGatesCommand(
             arguments.Message.Chat.Id,
             "Per quante ore vuoi che i cancelli siano abilitati a tutti 🕓?\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
             replyMarkup: kbd,
-            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html
+            parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+            disableNotification: true
         );
     }
 
@@ -50,7 +51,8 @@ internal class UnlockGatesCommand(
             database.Edit((data) => data.GatesOpenAccessExpirationDate = null);
             await arguments.Client.SendMessage(
                 arguments.Message.Chat.Id,
-                $"I cancelli sono bloccati 😼, solo gli amminstratori possono utilizzarli"
+                $"I cancelli sono bloccati 😼, solo gli amminstratori possono utilizzarli",
+                disableNotification: true
             );
         }
         else
@@ -59,7 +61,8 @@ internal class UnlockGatesCommand(
             database.Edit((data) => data.GatesOpenAccessExpirationDate = date);
             await arguments.Client.SendMessage(
                 arguments.Message.Chat.Id,
-                $"I cancelli sono aperti fino al {date} 🙀"
+                $"I cancelli sono aperti fino al {date} 🙀",
+                disableNotification: true
             );
         }
         await arguments.Client.AnswerCallbackQuery(update.CallbackQuery!.Id);

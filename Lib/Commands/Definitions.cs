@@ -36,7 +36,8 @@ internal abstract class Command(Skin skin, IConfiguration configuration)
                 await arguments.Client.SendAsset(arguments.Message, skin.Schema.Unauthorized);
                 await arguments.Client.SendMessage(
                     arguments.Message.Chat.Id,
-                    "Non hai abbastanza poteri canide 🐶"
+                    "Non hai abbastanza poteri canide 🐶",
+                    disableNotification: true
                 );
                 return;
             }

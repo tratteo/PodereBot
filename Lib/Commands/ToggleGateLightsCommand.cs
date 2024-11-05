@@ -26,7 +26,8 @@ internal class ToggleGatesLightCommand(
         await arguments.Client.SendAsset(arguments.Message, skin.Schema.GatesLight);
         await arguments.Client.SendMessage(
             arguments.Message.Chat.Id,
-            "Ho acceso o spento le luci del cancello. Io non posso sapere in che stato sono, vai a guardare 😿"
+            "Ho acceso o spento le luci del cancello. Io non posso sapere in che stato sono, vai a guardare 😿",
+            disableNotification: true
         );
     }
 }

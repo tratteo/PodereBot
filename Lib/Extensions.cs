@@ -81,15 +81,27 @@ public static class Extensions
         switch (asset.Type)
         {
             case AssetType.video:
-                await client.SendVideo(message.Chat.Id, InputFile.FromString(asset.Source));
+                await client.SendVideo(
+                    message.Chat.Id,
+                    InputFile.FromString(asset.Source),
+                    disableNotification: true
+                );
                 break;
             case AssetType.image:
                 break;
             case AssetType.gif:
-                await client.SendAnimation(message.Chat.Id, InputFile.FromString(asset.Source));
+                await client.SendAnimation(
+                    message.Chat.Id,
+                    InputFile.FromString(asset.Source),
+                    disableNotification: true
+                );
                 break;
             case AssetType.sticker:
-                await client.SendSticker(message.Chat.Id, InputFile.FromString(asset.Source));
+                await client.SendSticker(
+                    message.Chat.Id,
+                    InputFile.FromString(asset.Source),
+                    disableNotification: true
+                );
                 break;
         }
     }

@@ -44,7 +44,8 @@ internal abstract class AbstractOpenGateCommand(
                 await arguments.Client.SendAsset(arguments.Message, skin.Schema.Unavailable);
                 await arguments.Client.SendMessage(
                     arguments.Message.Chat.Id,
-                    "I cancelli sono bloccati al momento ❌"
+                    "I cancelli sono bloccati al momento ❌",
+                    disableNotification: true
                 );
                 return;
             }
@@ -63,7 +64,8 @@ internal abstract class AbstractOpenGateCommand(
             $"Confermi di voler aprire il cancello {GateName}?",
             replyMarkup: new InlineKeyboardMarkup()
                 .AddButton("✅", EncodeCallbackQueryData("y"))
-                .AddButton("❌", EncodeCallbackQueryData("n"))
+                .AddButton("❌", EncodeCallbackQueryData("n")),
+            disableNotification: true
         );
     }
 
@@ -81,7 +83,8 @@ internal abstract class AbstractOpenGateCommand(
             await arguments.Client.SendAsset(arguments.Message, Asset);
             await arguments.Client.SendMessage(
                 arguments.Message.Chat.Id,
-                $"Ho aperto il cancello {GateName} 🐱"
+                $"Ho aperto il cancello {GateName} 🐱",
+                disableNotification: true
             );
         }
         if (confirmationMessage != null)
