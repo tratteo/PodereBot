@@ -20,22 +20,12 @@ if ! id -u "$user" &> /dev/null; then
 fi
 
 # ===== SCRIPTS GENERATION
-echo - generating scripts
+echo - generating run script
 run="#!/bin/bash
 cd /home/$user/PodereBot/build
 ./PodereBot"
 echo -e "$run" > ./run.sh
 chmod +x ./run.sh
-
-patch="#!/bin/bash
-git fetch --all
-git reset --hard
-git pull
-dotnet build --output build
-systemctl restart poderebot.service
-systemctl status poderebot.service --no-pager"
-echo -e "$patch" > ./patch.sh
-chmod +x ./patch.sh
 
 # ===== BUILD
 echo - patching build

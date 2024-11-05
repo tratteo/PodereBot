@@ -12,6 +12,7 @@ Console.WriteLine("========== Podere Bot ==========\n");
 
 DotNetEnv.Env.Load();
 var host = Host.CreateDefaultBuilder(args)
+    .ConfigureAppConfiguration(builder => builder.AddDotNetEnv())
     .ConfigureServices(
         (host, services) =>
         {
@@ -20,7 +21,7 @@ var host = Host.CreateDefaultBuilder(args)
             );
             services.AddCommands();
 
-            if (host.Configuration.GetValue<string?>("SerialPort") == null)
+            if (string.IsNullOrEmpty(host.Configuration.GetValue<string>("SerialPort")))
             {
                 services.AddSingleton<IPinDriver, EmbeddedPinDriver>();
             }
@@ -35,7 +36,6 @@ var host = Host.CreateDefaultBuilder(args)
             services.AddHostedService<BotHostedService>();
         }
     )
-    .ConfigureAppConfiguration(builder => builder.AddDotNetEnv())
     .Build();
 var loggerProvider = host.Services.GetRequiredService<ILoggerFactory>();
 var logger = loggerProvider.CreateLogger(string.Empty);
