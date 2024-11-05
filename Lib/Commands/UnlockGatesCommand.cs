@@ -31,7 +31,7 @@ internal class UnlockGatesCommand(
         }
         kbd.AddNewRow();
         kbd.AddButton("Blocca", EncodeCallbackQueryData(new { hours = -1 }));
-        await arguments.Client.SendTextMessageAsync(
+        await arguments.Client.SendMessage(
             arguments.Message.Chat.Id,
             "Per quante ore vuoi che i cancelli siano abilitati a tutti 🕓?\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
             replyMarkup: kbd,
@@ -48,7 +48,7 @@ internal class UnlockGatesCommand(
         if (hours < 0)
         {
             database.Edit((data) => data.GatesOpenAccessExpirationDate = null);
-            await arguments.Client.SendTextMessageAsync(
+            await arguments.Client.SendMessage(
                 arguments.Message.Chat.Id,
                 $"I cancelli sono bloccati 😼, solo gli amminstratori possono utilizzarli"
             );
@@ -57,11 +57,11 @@ internal class UnlockGatesCommand(
         {
             date = date.AddHours(hours);
             database.Edit((data) => data.GatesOpenAccessExpirationDate = date);
-            await arguments.Client.SendTextMessageAsync(
+            await arguments.Client.SendMessage(
                 arguments.Message.Chat.Id,
                 $"I cancelli sono aperti fino al {date} 🙀"
             );
         }
-        await arguments.Client.AnswerCallbackQueryAsync(update.CallbackQuery!.Id);
+        await arguments.Client.AnswerCallbackQuery(update.CallbackQuery!.Id);
     }
 }

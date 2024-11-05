@@ -9,7 +9,7 @@ internal class SendPositionCommand(SkinService skin, IConfiguration configuratio
 {
     protected override async Task ExecuteInternal(CommandArguments arguments)
     {
-        await arguments.Client.SendVenueAsync(
+        await arguments.Client.SendVenue(
             arguments.Message.Chat.Id,
             41.49802515060315,
             12.79789867806239,

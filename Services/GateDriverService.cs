@@ -4,7 +4,7 @@ using PodereBot.Services;
 
 internal class GateDriverService(
     ILogger<GateDriverService> logger,
-    SerialService serialCom,
+    IPinDriver pinDriver,
     IConfiguration configuration
 )
 {
@@ -15,16 +15,16 @@ internal class GateDriverService(
     }
 
     private readonly ILogger logger = logger;
-    private readonly SerialService serialCom = serialCom;
+    private readonly IPinDriver serialCom = pinDriver;
     private readonly IConfiguration configuration = configuration;
 
     public async Task ToggleLights()
     {
         int? pin = configuration.GetValue<int>("Serial:GatesLightPin");
         logger.LogDebug("serial pin: {p}", pin);
-        serialCom.Write($"h{pin}");
+        await serialCom.PinHigh(pin);
         await Task.Delay(1000);
-        serialCom.Write($"l{pin}");
+        await serialCom.PinLow(pin);
     }
 
     public async Task Open(GateId gate)
@@ -40,8 +40,8 @@ internal class GateDriverService(
                 break;
         }
         logger.LogDebug("serial pin: {p}", pin);
-        serialCom.Write($"h{pin}");
+        await serialCom.PinHigh(pin);
         await Task.Delay(1000);
-        serialCom.Write($"l{pin}");
+        await serialCom.PinLow(pin);
     }
 }

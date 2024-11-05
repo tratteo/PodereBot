@@ -69,7 +69,7 @@ public static class Extensions
         return new ReactionTypeEmoji() { Emoji = available[random.Next(0, available.Count)] };
     }
 
-    internal static async Task SendAssetAsync(
+    internal static async Task SendAsset(
         this TelegramBotClient client,
         Message message,
         Asset? asset
@@ -81,18 +81,15 @@ public static class Extensions
         switch (asset.Type)
         {
             case AssetType.video:
-                await client.SendVideoAsync(message.Chat.Id, InputFile.FromString(asset.Source));
+                await client.SendVideo(message.Chat.Id, InputFile.FromString(asset.Source));
                 break;
             case AssetType.image:
                 break;
             case AssetType.gif:
-                await client.SendAnimationAsync(
-                    message.Chat.Id,
-                    InputFile.FromString(asset.Source)
-                );
+                await client.SendAnimation(message.Chat.Id, InputFile.FromString(asset.Source));
                 break;
             case AssetType.sticker:
-                await client.SendStickerAsync(message.Chat.Id, InputFile.FromString(asset.Source));
+                await client.SendSticker(message.Chat.Id, InputFile.FromString(asset.Source));
                 break;
         }
     }

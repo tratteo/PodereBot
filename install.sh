@@ -7,13 +7,16 @@ error_handler() {
 
 if [ "$#" -eq 0 ]; then
   echo "no user provided"
+  echo "sudo ./install.sh <user> <embedded | serial | null>(gpio-mode)"
   exit 1
 fi
 user="$1"
+embedded_gpio="$2"
+
 trap 'error_handler $LINENO' ERR
 
 if ! id -u "$user" &> /dev/null; then
-    echo "user [$pi] does not exist in the current system"
+    echo "user [$user] does not exist in the current system"
     exit 1
 fi
 
@@ -31,7 +34,7 @@ git clean -fd
 git pull
 dotnet build --output build
 systemctl restart poderebot.service
-systemctl status poderebot.service"
+systemctl status poderebot.service --no-pager"
 echo -e "$patch" > ./patch.sh
 chmod +x ./patch.sh
 
@@ -54,7 +57,8 @@ ExecStart=/home/$user/PodereBot/run.sh
 WantedBy=multi-user.target"
 echo -e "$service" > /etc/systemd/system/poderebot.service
 
-echo - reloading and starting daemon
+echo - reloading daemon
 sudo systemctl daemon-reload
+echo - enabling service
 sudo systemctl enable poderebot.service
 echo - installation completed

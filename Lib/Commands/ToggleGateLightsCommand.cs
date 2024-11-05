@@ -21,10 +21,10 @@ internal class ToggleGatesLightCommand(
 
     protected override async Task ExecuteInternal(CommandArguments arguments)
     {
-        await arguments.Client.SendChatActionAsync(arguments.Message.Chat.Id, ChatAction.Typing);
+        await arguments.Client.SendChatAction(arguments.Message.Chat.Id, ChatAction.Typing);
         await gateDriver.ToggleLights();
-        await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.GatesLight);
-        await arguments.Client.SendTextMessageAsync(
+        await arguments.Client.SendAsset(arguments.Message, skin.Schema.GatesLight);
+        await arguments.Client.SendMessage(
             arguments.Message.Chat.Id,
             "Ho acceso o spento le luci del cancello. Io non posso sapere in che stato sono, vai a guardare 😿"
         );

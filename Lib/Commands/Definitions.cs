@@ -2,7 +2,6 @@
 using Newtonsoft.Json;
 using PodereBot.Services;
 using Telegram.Bot;
-using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -30,12 +29,12 @@ internal abstract class Command(SkinService skin, IConfiguration configuration)
             var admins = configuration.GetSection("Admins").Get<long[]>()?.ToList() ?? [];
             if (!admins.Contains(arguments.Message.From!.Id))
             {
-                await arguments.Client.SendChatActionAsync(
+                await arguments.Client.SendChatAction(
                     arguments.Message.Chat.Id,
                     ChatAction.ChooseSticker
                 );
-                await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.Unauthorized);
-                await arguments.Client.SendTextMessageAsync(
+                await arguments.Client.SendAsset(arguments.Message, skin.Schema.Unauthorized);
+                await arguments.Client.SendMessage(
                     arguments.Message.Chat.Id,
                     "Non hai abbastanza poteri canide 🐶"
                 );
@@ -44,7 +43,7 @@ internal abstract class Command(SkinService skin, IConfiguration configuration)
         }
         await ExecuteInternal(arguments);
 
-        await arguments.Client.SetMessageReactionAsync(
+        await arguments.Client.SetMessageReaction(
             arguments.Message.Chat.Id,
             arguments.Message.MessageId,
             [arguments.Message.RandomEmoji()]
@@ -89,4 +88,5 @@ internal class CommandRegistryKey(
 
 internal class CommandRegistryKey<T>(string command, string description, bool admin = false)
     : CommandRegistryKey(command, description, typeof(T), admin)
-    where T : Command { }
+    where T : Command
+{ }

@@ -1,4 +1,5 @@
 ﻿using DotNetEnv.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,20 +12,26 @@ Console.WriteLine("========== Podere Bot ==========\n");
 
 DotNetEnv.Env.Load();
 var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
-    {
-        services.Configure<ConsoleLifetimeOptions>(
-            options => options.SuppressStatusMessages = true
-        );
-        services.AddCommands();
+    .ConfigureServices(
+        (host, services) =>
+        {
+            services.Configure<ConsoleLifetimeOptions>(
+                options => options.SuppressStatusMessages = true
+            );
+            services.AddCommands();
 
-        services.AddSingleton<SerialService>();
-        services.AddSingleton<GateDriverService>();
-        services.AddSingleton<SkinService>();
-        services.AddSingleton<DatabaseService>();
+#if EMBEDDED_GPIO
+            services.AddSingleton<IPinDriver, EmbeddedPinDriver>();
+#else
+            services.AddSingleton<IPinDriver, SerialPinDriver>();
+#endif
+            services.AddSingleton<GateDriverService>();
+            services.AddSingleton<SkinService>();
+            services.AddSingleton<DatabaseService>();
 
-        services.AddHostedService<BotHostedService>();
-    })
+            services.AddHostedService<BotHostedService>();
+        }
+    )
     .ConfigureAppConfiguration(builder => builder.AddDotNetEnv())
     .Build();
 var loggerProvider = host.Services.GetRequiredService<ILoggerFactory>();

@@ -41,8 +41,8 @@ internal abstract class AbstractOpenGateCommand(
                 || db.Data.GatesOpenAccessExpirationDate > DateTime.Now;
             if (!gatesOpen)
             {
-                await arguments.Client.SendAssetAsync(arguments.Message, skin.Schema.Unavailable);
-                await arguments.Client.SendTextMessageAsync(
+                await arguments.Client.SendAsset(arguments.Message, skin.Schema.Unavailable);
+                await arguments.Client.SendMessage(
                     arguments.Message.Chat.Id,
                     "I cancelli sono bloccati al momento ❌"
                 );
@@ -58,7 +58,7 @@ internal abstract class AbstractOpenGateCommand(
     private async Task OpenProcedure(CommandArguments arguments)
     {
         arguments.Client.OnUpdate += (upd) => OnUpdate(arguments, upd);
-        confirmationMessage = await arguments.Client.SendTextMessageAsync(
+        confirmationMessage = await arguments.Client.SendMessage(
             arguments.Message.Chat.Id,
             $"Confermi di voler aprire il cancello {GateName}?",
             replyMarkup: new InlineKeyboardMarkup()
@@ -72,24 +72,21 @@ internal abstract class AbstractOpenGateCommand(
         if (!DecodeCallbackQueryData(update.CallbackQuery?.Data, out var data))
             return;
 
-        await arguments.Client.AnswerCallbackQueryAsync(update.CallbackQuery!.Id);
+        await arguments.Client.AnswerCallbackQuery(update.CallbackQuery!.Id);
 
         if (data == "y")
         {
-            await arguments.Client.SendChatActionAsync(
-                arguments.Message.Chat.Id,
-                ChatAction.Typing
-            );
+            await arguments.Client.SendChatAction(arguments.Message.Chat.Id, ChatAction.Typing);
             await gateDriver.Open(gateId);
-            await arguments.Client.SendAssetAsync(arguments.Message, Asset);
-            await arguments.Client.SendTextMessageAsync(
+            await arguments.Client.SendAsset(arguments.Message, Asset);
+            await arguments.Client.SendMessage(
                 arguments.Message.Chat.Id,
                 $"Ho aperto il cancello {GateName} 🐱"
             );
         }
         if (confirmationMessage != null)
         {
-            await arguments.Client.DeleteMessageAsync(
+            await arguments.Client.DeleteMessage(
                 confirmationMessage.Chat.Id,
                 confirmationMessage.MessageId
             );

@@ -38,18 +38,18 @@ internal class BotHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var me = await client.GetMeAsync(cancellationToken: cancellationToken);
+        var me = await client.GetMe(cancellationToken: cancellationToken);
         var skinData =
             $"Skin caricata: {skin.Schema.Metadata.Name} by {skin.Schema.Metadata.Author}";
-        await client.SetMyDescriptionAsync(
+        await client.SetMyDescription(
             $"Che vuoi? \n\n{skinData}",
             cancellationToken: cancellationToken
         );
-        await client.SetMyShortDescriptionAsync(
+        await client.SetMyShortDescription(
             $"Che vuoi? \n\n{skinData}",
             cancellationToken: cancellationToken
         );
-        await client.SetMyCommandsAsync(
+        await client.SetMyCommands(
             Registry.commands.ConvertAll(
                 c => new BotCommand() { Command = c.command, Description = c.description }
             ),

@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging;
 
 namespace PodereBot.Services;
 
-internal class SerialService
+internal class SerialPinDriver : IPinDriver
 {
     private const int BAUD_RATE = 115200;
 
     private readonly ILogger logger;
     private readonly SerialPort? serialPort;
 
-    public SerialService(ILogger<SerialService> logger, IConfiguration configuration)
+    public SerialPinDriver(ILogger<SerialPinDriver> logger, IConfiguration configuration)
     {
         this.logger = logger;
         string? port = configuration.GetValue<string>("Serial:Port")!;
@@ -27,23 +27,35 @@ internal class SerialService
         }
     }
 
-    public bool Write(string message)
+    public Task PinHigh(int? pin)
     {
-        if (string.IsNullOrEmpty(message))
-        {
-            return false;
-        }
-
+        if (pin == null)
+            return Task.CompletedTask;
         try
         {
-            serialPort?.Write(message);
-            logger.LogTrace("message written to {p}: {m}", serialPort, message);
-            return true;
+            serialPort?.Write($"h{pin}");
+            logger.LogTrace("serial pin {p}: high", pin);
         }
         catch (Exception ex)
         {
             logger.LogTrace(ex, "error writing to serial port {p}", serialPort);
-            return false;
         }
+        return Task.CompletedTask;
+    }
+
+    public Task PinLow(int? pin)
+    {
+        if (pin == null)
+            return Task.CompletedTask;
+        try
+        {
+            serialPort?.Write($"l{pin}");
+            logger.LogTrace("serial pin {p}: low", pin);
+        }
+        catch (Exception ex)
+        {
+            logger.LogTrace(ex, "error writing to serial port {p}", serialPort);
+        }
+        return Task.CompletedTask;
     }
 }
