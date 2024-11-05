@@ -11,7 +11,6 @@ if [ "$#" -eq 0 ]; then
   exit 1
 fi
 user="$1"
-embedded_gpio="$2"
 
 trap 'error_handler $LINENO' ERR
 

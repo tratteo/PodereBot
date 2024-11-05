@@ -1,15 +1,12 @@
+using System.Device.Gpio;
 using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-#if EMBEDDED_GPIO
-using System.Device.Gpio;
-#endif
 
 namespace PodereBot.Services;
 
 internal class EmbeddedPinDriver : IPinDriver
 {
-#if EMBEDDED_GPIO
     private readonly GpioController gpioController;
     private readonly ILogger<EmbeddedPinDriver> logger;
     private readonly IConfiguration configuration;
@@ -71,15 +68,4 @@ internal class EmbeddedPinDriver : IPinDriver
         }
         return Task.CompletedTask;
     }
-#else
-    public Task PinHigh(int? pin)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task PinLow(int? pin)
-    {
-        return Task.CompletedTask;
-    }
-#endif
 }

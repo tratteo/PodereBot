@@ -20,11 +20,14 @@ var host = Host.CreateDefaultBuilder(args)
             );
             services.AddCommands();
 
-#if EMBEDDED_GPIO
-            services.AddSingleton<IPinDriver, EmbeddedPinDriver>();
-#else
-            services.AddSingleton<IPinDriver, SerialPinDriver>();
-#endif
+            if (host.Configuration.GetValue<bool>("EmbeddedGpio") == true)
+            {
+                services.AddSingleton<IPinDriver, EmbeddedPinDriver>();
+            }
+            else
+            {
+                services.AddSingleton<IPinDriver, SerialPinDriver>();
+            }
             services.AddSingleton<GateDriverService>();
             services.AddSingleton<SkinService>();
             services.AddSingleton<DatabaseService>();
