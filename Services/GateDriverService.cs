@@ -15,16 +15,16 @@ internal class GateDriverService(
     }
 
     private readonly ILogger logger = logger;
-    private readonly IPinDriver serialCom = pinDriver;
+    private readonly IPinDriver pinDriver = pinDriver;
     private readonly IConfiguration configuration = configuration;
 
     public async Task ToggleLights()
     {
         int? pin = configuration.GetValue<int>("Serial:GatesLightPin");
         logger.LogDebug("serial pin: {p}", pin);
-        await serialCom.PinHigh(pin);
+        await pinDriver.PinHigh(pin);
         await Task.Delay(1000);
-        await serialCom.PinLow(pin);
+        await pinDriver.PinLow(pin);
     }
 
     public async Task Open(GateId gate)
@@ -40,8 +40,8 @@ internal class GateDriverService(
                 break;
         }
         logger.LogDebug("serial pin: {p}", pin);
-        await serialCom.PinHigh(pin);
+        await pinDriver.PinHigh(pin);
         await Task.Delay(1000);
-        await serialCom.PinLow(pin);
+        await pinDriver.PinLow(pin);
     }
 }

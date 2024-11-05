@@ -67,7 +67,7 @@ internal class BotHostedService : IHostedService
 
     private async Task OnMessage(Message msg, UpdateType type)
     {
-        if (DateTime.Now - msg.Date > TimeSpan.FromSeconds(30))
+        if (DateTime.Now.ToUniversalTime() - msg.Date.ToUniversalTime() > TimeSpan.FromSeconds(30))
         {
             return;
         }
