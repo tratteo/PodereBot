@@ -13,15 +13,15 @@ public class DatabaseSchema
         new() { GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate };
 }
 
-internal class DatabaseService
+internal class Database
 {
     private static readonly string DB_PATH = Path.Join(AppContext.BaseDirectory, "db.json");
-    private readonly ILogger<DatabaseService> logger;
+    private readonly ILogger<Database> logger;
 
     private readonly DatabaseSchema data;
     public DatabaseSchema Data => data.Clone();
 
-    public DatabaseService(ILogger<DatabaseService> logger)
+    public Database(ILogger<Database> logger)
     {
         this.logger = logger;
         if (File.Exists(DB_PATH))

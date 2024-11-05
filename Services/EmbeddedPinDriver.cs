@@ -43,7 +43,7 @@ internal class EmbeddedPinDriver : IPinDriver
         try
         {
             gpioController.Write((int)pin, PinValue.High);
-            logger.LogTrace("embedded pin {p}: high", pin);
+            logger.LogDebug("embedded pin {p}: high", pin);
         }
         catch (Exception ex)
         {
@@ -60,7 +60,7 @@ internal class EmbeddedPinDriver : IPinDriver
         try
         {
             gpioController.Write((int)pin, PinValue.Low);
-            logger.LogTrace("embedded pin {p}: low", pin);
+            logger.LogDebug("embedded pin {p}: low", pin);
         }
         catch (Exception ex)
         {

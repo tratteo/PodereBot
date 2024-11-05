@@ -14,7 +14,7 @@ internal class SerialPinDriver : IPinDriver
     public SerialPinDriver(ILogger<SerialPinDriver> logger, IConfiguration configuration)
     {
         this.logger = logger;
-        string? port = configuration.GetValue<string>("Serial:Port")!;
+        string? port = configuration.GetValue<string>("SerialPort")!;
         try
         {
             serialPort = new SerialPort(port, BAUD_RATE);
@@ -34,7 +34,7 @@ internal class SerialPinDriver : IPinDriver
         try
         {
             serialPort?.Write($"h{pin}");
-            logger.LogTrace("serial pin {p}: high", pin);
+            logger.LogDebug("serial pin {p}: high", pin);
         }
         catch (Exception ex)
         {
@@ -50,7 +50,7 @@ internal class SerialPinDriver : IPinDriver
         try
         {
             serialPort?.Write($"l{pin}");
-            logger.LogTrace("serial pin {p}: low", pin);
+            logger.LogDebug("serial pin {p}: low", pin);
         }
         catch (Exception ex)
         {

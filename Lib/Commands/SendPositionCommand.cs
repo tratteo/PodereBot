@@ -4,7 +4,7 @@ using Telegram.Bot;
 
 namespace PodereBot.Lib.Commands;
 
-internal class SendPositionCommand(SkinService skin, IConfiguration configuration)
+internal class SendPositionCommand(Skin skin, IConfiguration configuration)
     : Command(skin, configuration)
 {
     protected override async Task ExecuteInternal(CommandArguments arguments)

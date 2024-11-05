@@ -20,7 +20,7 @@ var host = Host.CreateDefaultBuilder(args)
             );
             services.AddCommands();
 
-            if (host.Configuration.GetValue<bool>("EmbeddedGpio") == true)
+            if (host.Configuration.GetValue<string?>("SerialPort") == null)
             {
                 services.AddSingleton<IPinDriver, EmbeddedPinDriver>();
             }
@@ -28,9 +28,9 @@ var host = Host.CreateDefaultBuilder(args)
             {
                 services.AddSingleton<IPinDriver, SerialPinDriver>();
             }
-            services.AddSingleton<GateDriverService>();
-            services.AddSingleton<SkinService>();
-            services.AddSingleton<DatabaseService>();
+            services.AddSingleton<GateDriver>();
+            services.AddSingleton<Skin>();
+            services.AddSingleton<Database>();
 
             services.AddHostedService<BotHostedService>();
         }

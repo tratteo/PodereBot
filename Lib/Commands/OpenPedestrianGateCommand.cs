@@ -7,9 +7,9 @@ using Telegram.Bot.Types.Enums;
 namespace PodereBot.Lib.Commands;
 
 internal class OpenPedestrianGateCommand(
-    SkinService skin,
-    GateDriverService gateDriver,
-    DatabaseService db,
+    Skin skin,
+    GateDriver gateDriver,
+    Database db,
     IConfiguration configuration,
     ILogger<OpenPedestrianGateCommand> logger
 )
@@ -19,7 +19,7 @@ internal class OpenPedestrianGateCommand(
         db,
         configuration,
         logger,
-        GateDriverService.GateId.pedestrian
+        GateDriver.GateId.pedestrian
     )
 {
     protected override string GateName => "pedonale";

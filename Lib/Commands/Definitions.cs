@@ -16,10 +16,10 @@ internal readonly struct CommandArguments
     public readonly bool Admin { get; init; }
 }
 
-internal abstract class Command(SkinService skin, IConfiguration configuration)
+internal abstract class Command(Skin skin, IConfiguration configuration)
 {
     protected readonly Guid instanceId = Guid.NewGuid();
-    protected readonly SkinService skin = skin;
+    protected readonly Skin skin = skin;
     protected readonly IConfiguration configuration = configuration;
 
     public async Task Execute(CommandArguments arguments)
@@ -88,5 +88,4 @@ internal class CommandRegistryKey(
 
 internal class CommandRegistryKey<T>(string command, string description, bool admin = false)
     : CommandRegistryKey(command, description, typeof(T), admin)
-    where T : Command
-{ }
+    where T : Command { }

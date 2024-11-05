@@ -2,8 +2,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 
-internal class GateDriverService(
-    ILogger<GateDriverService> logger,
+internal class GateDriver(
+    ILogger<GateDriver> logger,
     IPinDriver pinDriver,
     IConfiguration configuration
 )
@@ -20,7 +20,7 @@ internal class GateDriverService(
 
     public async Task ToggleLights()
     {
-        int? pin = configuration.GetValue<int>("Serial:GatesLightPin");
+        int? pin = configuration.GetValue<int>("Pins:GatesLight");
         logger.LogDebug("serial pin: {p}", pin);
         await pinDriver.PinHigh(pin);
         await Task.Delay(1000);
@@ -33,13 +33,12 @@ internal class GateDriverService(
         switch (gate)
         {
             case GateId.automatic:
-                pin = configuration.GetValue<int>("Serial:AutomaticGatePin");
+                pin = configuration.GetValue<int>("Pins:AutomaticGate");
                 break;
             case GateId.pedestrian:
-                pin = configuration.GetValue<int>("Serial:PedestrianGatePin");
+                pin = configuration.GetValue<int>("Pins:PedestrianGate");
                 break;
         }
-        logger.LogDebug("serial pin: {p}", pin);
         await pinDriver.PinHigh(pin);
         await Task.Delay(1000);
         await pinDriver.PinLow(pin);

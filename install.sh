@@ -49,7 +49,6 @@ After=network.target network-online.target
 
 [Service]
 Type=simple
-User=$user
 ExecStart=/home/$user/PodereBot/run.sh
 
 [Install]

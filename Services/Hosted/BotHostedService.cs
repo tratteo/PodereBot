@@ -15,15 +15,15 @@ internal class BotHostedService : IHostedService
     private readonly IServiceProvider services;
     private readonly CancellationTokenSource cancellationToken = new();
     private readonly TelegramBotClient client;
-    private readonly GateDriverService gate;
-    private readonly SkinService skin;
+    private readonly GateDriver gate;
+    private readonly Skin skin;
 
     public BotHostedService(
         ILogger<BotHostedService> logger,
         IConfiguration configuration,
         IServiceProvider services,
-        GateDriverService gate,
-        SkinService skin
+        GateDriver gate,
+        Skin skin
     )
     {
         this.gate = gate;
