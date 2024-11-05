@@ -7,7 +7,7 @@ error_handler() {
 
 if [ "$#" -eq 0 ]; then
   echo "no user provided"
-  echo "sudo ./install.sh <user>"
+  echo "sudo ./install.sh <user> <no-service (skip service generation)>"
   exit 1
 fi
 user="$1"
@@ -20,30 +20,45 @@ if ! id -u "$user" &> /dev/null; then
 fi
 
 # ===== SCRIPTS GENERATION
-echo - generating run script
-run="#!/bin/bash
+echo - generating scripts
+script="#!/bin/bash
 cd /home/$user/PodereBot/build
 ./PodereBot"
-echo -e "$run" > ./run.sh
+echo -e "$script" > ./run.sh
 chmod +x ./run.sh
+
+script="#!/bin/bash
+echo - fetching changes
+git fetch --all
+git reset --hard
+git pull
+echo - building distribution
+dotnet build --output build
+echo - restarting service
+systemctl restart poderebot.service
+systemctl status poderebot.service --no-pager"
+echo -e "$script" > ./patch.sh
+chmod +x ./patch.sh
 
 # ===== BUILD
 echo - patching build
 dotnet build --output build
 
 # ===== SYSTEMD SERVICE SETUP
-echo - writing .service file
-service="[Unit]
-Description=Telegram Podere bot
-After=network.target network-online.target
+if ["$2" != "no-service"]
+  echo - writing .service file
+  service="[Unit]
+  Description=Telegram Podere bot
+  After=network.target network-online.target
 
-[Service]
-Type=simple
-ExecStart=/home/$user/PodereBot/run.sh
+  [Service]
+  Type=simple
+  ExecStart=/home/$user/PodereBot/run.sh
 
-[Install]
-WantedBy=multi-user.target"
-echo -e "$service" > /etc/systemd/system/poderebot.service
+  [Install]
+  WantedBy=multi-user.target"
+  echo -e "$service" > /etc/systemd/system/poderebot.service
+fi
 
 echo - reloading daemon
 sudo systemctl daemon-reload
