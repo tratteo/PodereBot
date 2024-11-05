@@ -30,7 +30,6 @@ chmod +x ./run.sh
 patch="#!/bin/bash
 git fetch --all
 git reset --hard
-git clean -fd
 git pull
 dotnet build --output build
 systemctl restart poderebot.service
