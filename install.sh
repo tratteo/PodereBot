@@ -33,7 +33,7 @@ git fetch --all
 git reset --hard
 git pull
 echo - building distribution
-dotnet build --output build
+dotnet build /p:OutputPath=build
 echo - restarting service
 systemctl restart poderebot.service
 systemctl status poderebot.service --no-pager"
@@ -42,10 +42,10 @@ chmod +x ./patch.sh
 
 # ===== BUILD
 echo - patching build
-dotnet build --output build
+dotnet build /p:OutputPath=build
 
 # ===== SYSTEMD SERVICE SETUP
-if ["$2" != "no-service"]
+if ! [ "$2" = "no-service" ]; then
   echo - writing .service file
   service="[Unit]
   Description=Telegram Podere bot
