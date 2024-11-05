@@ -55,13 +55,18 @@ internal class BotHostedService : IHostedService
             ),
             cancellationToken: cancellationToken
         );
-        await client.SendMessage(962154266, "Presente 😼!", cancellationToken: cancellationToken);
+        await client.SendMessage(962154266, "Presente 😼", cancellationToken: cancellationToken);
         client.OnMessage += OnMessage;
         logger.LogInformation("@{u} is running", me.Username);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        await client.SendMessage(
+            962154266,
+            "Torno a dormire 🌙",
+            cancellationToken: cancellationToken
+        );
         this.cancellationToken.Cancel();
         await Task.CompletedTask;
     }
@@ -79,14 +84,18 @@ internal class BotHostedService : IHostedService
         {
             return;
         }
-        var cmdService = (Command?)services.GetService(match.commandType);
-        if (cmdService == null)
-        {
-            logger.LogWarning("unable to retrieve command service of type {t}", match.commandType);
-            return;
-        }
         try
         {
+            var cmdService = (Command?)services.GetService(match.commandType);
+            if (cmdService == null)
+            {
+                logger.LogWarning(
+                    "unable to retrieve command service of type {t}",
+                    match.commandType
+                );
+                return;
+            }
+
             await cmdService.Execute(
                 new CommandArguments()
                 {

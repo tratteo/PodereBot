@@ -49,7 +49,8 @@ if ! [ "$2" = "no-service" ]; then
   echo - writing .service file
   service="[Unit]
   Description=Telegram Podere bot
-  After=network.target network-online.target
+  After=network-online.target
+  Wants=network-online.target
 
   [Service]
   Type=simple

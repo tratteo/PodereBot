@@ -14,16 +14,29 @@ internal class EmbeddedPinDriver : IPinDriver
     public EmbeddedPinDriver(ILogger<EmbeddedPinDriver> logger, IConfiguration configuration)
     {
         gpioController = new GpioController();
-        for (int i = 0; i < gpioController.PinCount; i++)
-        {
-            gpioController.OpenPin(i);
-            // if (gpioController.IsPinModeSupported(i, PinMode.Output))
-            // {
-            //     gpioController.SetPinMode(i, PinMode.Output);
-            // }
-        }
         this.logger = logger;
         this.configuration = configuration;
+        InitializePins();
+    }
+
+    private void InitializePins()
+    {
+        for (int i = 0; i < gpioController.PinCount; i++)
+        {
+            try
+            {
+                gpioController.OpenPin(i);
+                if (gpioController.IsPinModeSupported(i, PinMode.Output))
+                {
+                    gpioController.SetPinMode(i, PinMode.Output);
+                    gpioController.Write(i, PinValue.Low);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("exception initializing pin {p}: {ex}", i, ex);
+            }
+        }
     }
 
     public void Dispose()

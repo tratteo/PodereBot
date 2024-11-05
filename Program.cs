@@ -39,5 +39,4 @@ var host = Host.CreateDefaultBuilder(args)
     .Build();
 var loggerProvider = host.Services.GetRequiredService<ILoggerFactory>();
 var logger = loggerProvider.CreateLogger(string.Empty);
-
 await host.RunAsync();
