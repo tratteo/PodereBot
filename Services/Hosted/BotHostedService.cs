@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Security.Cryptography;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PodereBot.Lib;
@@ -80,34 +82,40 @@ internal class BotHostedService : IHostedService
         logger.LogInformation("Received {type} '{t}' in {c}", type, msg.Text, msg.Chat);
         // logger.LogDebug("raw message: {r}", JsonConvert.SerializeObject(msg));
         var match = Registry.commands.FirstOrDefault(c => c.command == msg.Text);
-        if (match == null)
+        if (match != null)
         {
-            return;
-        }
-        try
-        {
-            var cmdService = (Command?)services.GetService(match.commandType);
-            if (cmdService == null)
+            try
             {
-                logger.LogWarning(
-                    "unable to retrieve command service of type {t}",
-                    match.commandType
-                );
-                return;
-            }
-
-            await cmdService.Execute(
-                new CommandArguments()
+                var cmdService = (Command?)services.GetService(match.commandType);
+                if (cmdService == null)
                 {
-                    Client = client,
-                    Message = msg,
-                    Admin = match.admin
+                    logger.LogWarning(
+                        "unable to retrieve command service of type {t}",
+                        match.commandType
+                    );
+                    return;
                 }
-            );
+
+                await cmdService.Execute(
+                    new CommandArguments()
+                    {
+                        Client = client,
+                        Message = msg,
+                        Admin = match.admin
+                    }
+                );
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("error executing command [{c}]: {e}", match.command, ex);
+            }
         }
-        catch (Exception ex)
-        {
-            logger.LogError("error executing command [{c}]: {e}", match.command, ex);
+        else
+        { // This is a normal text message
+            var responder = services.GetService<ConversationalResponder>();
+            if (responder == null)
+                return;
+            var _ = responder.Process(client, msg);
         }
     }
 }

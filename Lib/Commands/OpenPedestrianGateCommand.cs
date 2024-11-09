@@ -12,15 +12,7 @@ internal class OpenPedestrianGateCommand(
     Database db,
     IConfiguration configuration,
     ILogger<OpenPedestrianGateCommand> logger
-)
-    : AbstractOpenGateCommand(
-        skin,
-        gateDriver,
-        db,
-        configuration,
-        logger,
-        GateDriver.GateId.pedestrian
-    )
+) : AbstractOpenGateCommand(skin, gateDriver, db, configuration, logger, GateId.pedestrian)
 {
     protected override string GateName => "pedonale";
 

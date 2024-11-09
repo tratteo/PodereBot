@@ -15,13 +15,13 @@ internal abstract class AbstractOpenGateCommand(
     Database db,
     IConfiguration configuration,
     ILogger<AbstractOpenGateCommand> logger,
-    GateDriver.GateId gateId
+    GateId gateId
 ) : Command(skin, configuration)
 {
     private readonly GateDriver gateDriver = gateDriver;
     private readonly Database db = db;
     private readonly ILogger<AbstractOpenGateCommand> logger = logger;
-    private readonly GateDriver.GateId gateId = gateId;
+    private readonly GateId gateId = gateId;
     private Message? confirmationMessage;
 
     protected abstract string GateName { get; }

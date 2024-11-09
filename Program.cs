@@ -31,6 +31,7 @@ var host = Host.CreateDefaultBuilder(args)
             }
             services.AddSingleton<GateDriver>();
             services.AddSingleton<Skin>();
+            services.AddTransient<ConversationalResponder>();
             services.AddSingleton<Database>();
 
             services.AddHostedService<BotHostedService>();

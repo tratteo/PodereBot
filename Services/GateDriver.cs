@@ -1,6 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PodereBot.Services;
+
+namespace PodereBot.Services;
+
+public enum GateId
+{
+    automatic,
+    pedestrian
+}
 
 internal class GateDriver(
     ILogger<GateDriver> logger,
@@ -8,11 +15,7 @@ internal class GateDriver(
     IConfiguration configuration
 )
 {
-    public enum GateId
-    {
-        automatic,
-        pedestrian
-    }
+    const int IMPULSE_DURATION_MS = 600;
 
     private readonly ILogger logger = logger;
     private readonly IPinDriver pinDriver = pinDriver;
@@ -23,7 +26,7 @@ internal class GateDriver(
         int? pin = configuration.GetValue<int>("Pins:GatesLight");
         logger.LogDebug("serial pin: {p}", pin);
         await pinDriver.PinHigh(pin);
-        await Task.Delay(1000);
+        await Task.Delay(IMPULSE_DURATION_MS);
         await pinDriver.PinLow(pin);
     }
 
@@ -40,7 +43,7 @@ internal class GateDriver(
                 break;
         }
         await pinDriver.PinHigh(pin);
-        await Task.Delay(1000);
+        await Task.Delay(IMPULSE_DURATION_MS);
         await pinDriver.PinLow(pin);
     }
 }

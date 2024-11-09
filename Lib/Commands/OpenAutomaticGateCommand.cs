@@ -10,15 +10,7 @@ internal class OpenAutomaticGateCommand(
     Database db,
     IConfiguration configuration,
     ILogger<OpenAutomaticGateCommand> logger
-)
-    : AbstractOpenGateCommand(
-        skin,
-        gateDriver,
-        db,
-        configuration,
-        logger,
-        GateDriver.GateId.automatic
-    )
+) : AbstractOpenGateCommand(skin, gateDriver, db, configuration, logger, GateId.automatic)
 {
     protected override string GateName => "automatico";
 
