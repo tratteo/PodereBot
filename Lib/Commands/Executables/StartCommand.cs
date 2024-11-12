@@ -5,7 +5,7 @@ using Telegram.Bot;
 
 namespace PodereBot.Lib.Commands;
 
-[CommandMetadata(Key = "/start", Description = "??")]
+[CommandMetadata(Key = "/start", Description = "❓")]
 internal class StartCommand(Skin skin, ILogger<StartCommand> logger, IConfiguration configuration)
     : Command(skin, logger, configuration)
 {

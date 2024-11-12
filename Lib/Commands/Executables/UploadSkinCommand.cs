@@ -9,7 +9,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib.Commands;
 
-[CommandMetadata(Key = "/uploadskin", Description = "Carica una nuova skin")]
+[CommandMetadata(Key = "/uploadskin", Description = "Carica una nuova skin 🆕")]
 internal class UploadSkinCommand(
     ILogger<UploadSkinCommand> logger,
     Skin skin,

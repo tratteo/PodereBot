@@ -9,7 +9,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib.Commands;
 
-[CommandMetadata(Key = "/myinfo", Description = "Ti mando le info Telegram tuo profilo 🔎")]
+[CommandMetadata(Key = "/myinfo", Description = "Ti mando le info Telegram del tuo profilo 🔎")]
 internal class UserInfoCommand(
     Skin skin,
     IConfiguration configuration,
