@@ -1,27 +1,80 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using PodereBot.Lib.Commands;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib;
 
 public static class Extensions
 {
-    public static void AddCommands(this IServiceCollection services)
+    internal static async Task<Message> CleanupOnDetach(this Task<Message> msgTask, Command command)
     {
-        foreach (var c in Registry.commands)
+        var msg = await msgTask;
+        command.AddToCleanupMd(msg);
+        return msg;
+    }
+
+    internal static async Task<Message> DeleteOnDetach(this Task<Message> msgTask, Command command)
+    {
+        var msg = await msgTask;
+        command.AddToRemove(msg);
+        return msg;
+    }
+
+    internal static object ReflectSchema(this Type type)
+    {
+        var properties = type.GetProperties();
+
+        var schema = new Dictionary<string, object>();
+        foreach (var property in properties)
+        {
+            var propertyType = property.PropertyType;
+            if (propertyType.IsEnum)
+            {
+                schema.Add(property.Name, string.Join("|", Enum.GetNames(propertyType)));
+            }
+            else if (propertyType.IsPrimitive || propertyType == typeof(string))
+            {
+                schema.Add(property.Name, propertyType.FullName ?? "?");
+            }
+            else
+            {
+                schema.Add(property.Name, propertyType.ReflectSchema());
+            }
+        }
+
+        return schema;
+    }
+
+    internal static List<CommandRegistryKey> GetCommands(this Assembly assembly)
+    {
+        var commands = new List<CommandRegistryKey>();
+        foreach (var type in assembly.GetTypes())
+        {
+            var attribute = type.GetCustomAttribute<CommandMetadataAttribute>();
+            if (attribute == null || !type.IsSubclassOf(typeof(Command)) || type.IsAbstract)
+                continue;
+            commands.Add(new CommandRegistryKey(attribute, type));
+        }
+        return commands;
+    }
+
+    internal static void AddCommands(this IServiceCollection services)
+    {
+        var commands = Assembly.GetExecutingAssembly().GetCommands();
+        foreach (var c in commands)
         {
             services.AddTransient(c.commandType);
         }
     }
 
-    public static ReactionTypeEmoji RandomEmoji(this Message emoji)
+    internal static ReactionTypeEmoji RandomEmoji(this Message emoji)
     {
         List<string> available =
         [
             "👍",
-            "👎",
             "❤",
             "🔥",
             "🥰",

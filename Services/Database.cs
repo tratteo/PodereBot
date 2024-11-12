@@ -9,8 +9,15 @@ public class DatabaseSchema
     [JsonProperty]
     public DateTime? GatesOpenAccessExpirationDate { get; set; } = null;
 
+    [JsonProperty]
+    public string? ActiveSkin { get; set; } = null;
+
     public DatabaseSchema Clone() =>
-        new() { GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate };
+        new()
+        {
+            GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate,
+            ActiveSkin = ActiveSkin
+        };
 }
 
 internal class Database

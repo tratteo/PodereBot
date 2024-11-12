@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using PodereBot.Lib.Commands.Abstract;
 using PodereBot.Services;
-using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
 
 namespace PodereBot.Lib.Commands;
 
+[CommandMetadata(Key = "/openped", Description = "Ti apro il cancello pedonale (forse 😼)")]
 internal class OpenPedestrianGateCommand(
     Skin skin,
     GateDriver gateDriver,

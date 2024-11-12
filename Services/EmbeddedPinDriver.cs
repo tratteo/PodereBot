@@ -1,5 +1,4 @@
 using System.Device.Gpio;
-using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

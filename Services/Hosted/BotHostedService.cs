@@ -1,4 +1,4 @@
-﻿using System.Security.Cryptography;
+﻿using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,18 +17,16 @@ internal class BotHostedService : IHostedService
     private readonly IServiceProvider services;
     private readonly CancellationTokenSource cancellationToken = new();
     private readonly TelegramBotClient client;
-    private readonly GateDriver gate;
     private readonly Skin skin;
+    private readonly List<CommandRegistryKey> commandEntries;
 
     public BotHostedService(
         ILogger<BotHostedService> logger,
         IConfiguration configuration,
         IServiceProvider services,
-        GateDriver gate,
         Skin skin
     )
     {
-        this.gate = gate;
         this.skin = skin;
         this.logger = logger;
         this.services = services;
@@ -36,24 +34,24 @@ internal class BotHostedService : IHostedService
             configuration.GetValue<string>("TELEGRAM_API_KEY")!,
             cancellationToken: cancellationToken.Token
         );
+        commandEntries = Assembly.GetExecutingAssembly().GetCommands();
+        logger.LogInformation("registered {c} commands", commandEntries.Count);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         var me = await client.GetMe(cancellationToken: cancellationToken);
-        var skinData =
-            $"Skin caricata: {skin.Schema.Metadata.Name} by {skin.Schema.Metadata.Author}";
-        await client.SetMyDescription(
-            $"Che vuoi? \n\n{skinData}",
-            cancellationToken: cancellationToken
-        );
-        await client.SetMyShortDescription(
-            $"Che vuoi? \n\n{skinData}",
-            cancellationToken: cancellationToken
-        );
+
+        await client.SetMyDescription($"Che vuoi?", cancellationToken: cancellationToken);
+        await client.SetMyShortDescription($"Che vuoi?", cancellationToken: cancellationToken);
         await client.SetMyCommands(
-            Registry.commands.ConvertAll(
-                c => new BotCommand() { Command = c.command, Description = c.description }
+            commandEntries.ConvertAll(
+                c =>
+                    new BotCommand()
+                    {
+                        Command = c.metadata.Key,
+                        Description = c.metadata.Description
+                    }
             ),
             cancellationToken: cancellationToken
         );
@@ -81,7 +79,7 @@ internal class BotHostedService : IHostedService
         }
         logger.LogInformation("Received {type} '{t}' in {c}", type, msg.Text, msg.Chat);
         // logger.LogDebug("raw message: {r}", JsonConvert.SerializeObject(msg));
-        var match = Registry.commands.FirstOrDefault(c => c.command == msg.Text);
+        var match = commandEntries.FirstOrDefault(c => c.metadata.Key == msg.Text);
         if (match != null)
         {
             try
@@ -101,13 +99,13 @@ internal class BotHostedService : IHostedService
                     {
                         Client = client,
                         Message = msg,
-                        Admin = match.admin
+                        Admin = match.metadata.Admin
                     }
                 );
             }
             catch (Exception ex)
             {
-                logger.LogError("error executing command [{c}]: {e}", match.command, ex);
+                logger.LogError("error executing command [{c}]: {e}", match.metadata.Key, ex);
             }
         }
         else

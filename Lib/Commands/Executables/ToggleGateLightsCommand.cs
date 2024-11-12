@@ -2,30 +2,33 @@
 using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace PodereBot.Lib.Commands;
 
+[CommandMetadata(
+    Key = "/gatelight",
+    Description = "Accendo/spengo le luci dei cancelli 💡",
+    Admin = true
+)]
 internal class ToggleGatesLightCommand(
     GateDriver gateDriver,
     Skin skin,
     Database db,
     IConfiguration configuration,
     ILogger<ToggleGatesLightCommand> logger
-) : Command(skin, configuration)
+) : Command(skin, logger, configuration)
 {
     private readonly GateDriver gateDriver = gateDriver;
     private readonly Database db = db;
-    private readonly ILogger<ToggleGatesLightCommand> logger = logger;
 
-    protected override async Task ExecuteInternal(CommandArguments arguments)
+    protected override async Task ExecuteInternal()
     {
-        await arguments.Client.SendChatAction(arguments.Message.Chat.Id, ChatAction.Typing);
+        await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.Typing);
         await gateDriver.ToggleLights();
-        await arguments.Client.SendAsset(arguments.Message, skin.Schema.GatesLight);
-        await arguments.Client.SendMessage(
-            arguments.Message.Chat.Id,
+        await Arguments.Client.SendAsset(Arguments.Message, skin.Schema.GatesLight);
+        await Arguments.Client.SendMessage(
+            Arguments.Message.Chat.Id,
             "Ho acceso o spento le luci del cancello. Io non posso sapere in che stato sono, vai a guardare 😿",
             disableNotification: true
         );
