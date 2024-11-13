@@ -20,23 +20,23 @@ internal abstract class AbstractOpenGateCommand(
     private readonly GateDriver gateDriver = gateDriver;
     private readonly Database db = db;
     private readonly GateId gateId = gateId;
-
+    private readonly List<long> adminIds =
+        configuration.GetSection("Admins").Get<long[]>()?.ToList() ?? [];
     protected abstract string GateName { get; }
     protected abstract Asset? Asset { get; }
 
     protected override async Task ExecuteInternal()
     {
-        var admins = configuration.GetSection("Admins").Get<long[]>()?.ToList() ?? [];
-        if (admins.Contains(Arguments.Message.From!.Id))
+        if (adminIds.Contains(Arguments.Message.From!.Id))
         {
             await OpenProcedure();
         }
         else
         {
-            var gatesOpen =
+            var canOpen =
                 db.Data.GatesOpenAccessExpirationDate != null
-                || db.Data.GatesOpenAccessExpirationDate > DateTime.Now;
-            if (!gatesOpen)
+                && DateTime.Now < db.Data.GatesOpenAccessExpirationDate;
+            if (!canOpen)
             {
                 await Arguments.Client.SendAsset(Arguments.Message, skin.Schema.Unavailable);
                 await Arguments.Client.SendMessage(
@@ -56,7 +56,6 @@ internal abstract class AbstractOpenGateCommand(
     private async Task OpenProcedure()
     {
         AttachEvents();
-
         await Arguments
             .Client.SendMessage(
                 Arguments.Message.Chat.Id,
@@ -83,6 +82,12 @@ internal abstract class AbstractOpenGateCommand(
                 $"Ho aperto il cancello {GateName} 🐱",
                 disableNotification: true
             );
+            if (!adminIds.Contains(Arguments.Message.From!.Id))
+            {
+                await Arguments.Client.NotifyOwners(
+                    $"🔑 <b>{Arguments.Message.From.Username}</b> ha aperto il cancello {GateName}"
+                );
+            }
         }
 
         await DetachEvents();

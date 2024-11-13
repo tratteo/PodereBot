@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib.Commands;
@@ -34,13 +35,20 @@ internal class UnlockGatesCommand(
             }
         }
         kbd.AddNewRow();
-        kbd.AddButton("Blocca", EncodeCallbackQueryData(-1));
+        kbd.AddButton("Blocca", EncodeCallbackQueryData(0));
+        kbd.AddNewRow();
+        kbd.AddButton("Annulla", EncodeCallbackQueryData(-1));
+        var status =
+            database.Data.GatesOpenAccessExpirationDate == null
+            || database.Data.GatesOpenAccessExpirationDate < DateTime.Now
+                ? "🔒 I cancelli sono <b>bloccati</b>"
+                : $"🔓 I cancelli sono <b>sbloccati</b> fino al <b>{database.Data.GatesOpenAccessExpirationDate}</b>";
         await Arguments
             .Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                "Per quante ore vuoi che i cancelli siano abilitati a tutti 🕓?\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
+                $"{status}.\n\n🕓 Per quante ore vuoi che i cancelli siano abilitati a tutti?\nSeleziona <b>Blocca</b> per disabilitare l'accesso ai cancelli",
                 replyMarkup: kbd,
-                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+                parseMode: ParseMode.Html,
                 disableNotification: true
             )
             .DeleteOnDetach(this);
@@ -50,7 +58,7 @@ internal class UnlockGatesCommand(
     {
         var date = DateTime.Now;
         int hours = int.Parse(callbackData);
-        if (hours < 0)
+        if (hours == 0)
         {
             database.Edit((data) => data.GatesOpenAccessExpirationDate = null);
             await Arguments.Client.SendMessage(
@@ -59,13 +67,13 @@ internal class UnlockGatesCommand(
                 disableNotification: true
             );
         }
-        else
+        else if (hours > 0)
         {
             date = date.AddHours(hours);
             database.Edit((data) => data.GatesOpenAccessExpirationDate = date);
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"I cancelli sono aperti fino al {date} 🙀",
+                $"I cancelli sono sbloccati fino al {date} 🙀",
                 disableNotification: true
             );
         }

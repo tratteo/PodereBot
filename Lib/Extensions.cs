@@ -4,11 +4,20 @@ using PodereBot.Lib.Commands;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace PodereBot.Lib;
 
 public static class Extensions
 {
+    internal static async Task NotifyOwners(this TelegramBotClient client, string message)
+    {
+        List<int> ids = [962154266];
+        await Task.WhenAll(
+            ids.ConvertAll(i => client.SendMessage(i, message, parseMode: ParseMode.Html))
+        );
+    }
+
     internal static async Task<Message> CleanupOnDetach(this Task<Message> msgTask, Command command)
     {
         var msg = await msgTask;

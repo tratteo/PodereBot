@@ -55,18 +55,14 @@ internal class BotHostedService : IHostedService
             ),
             cancellationToken: cancellationToken
         );
-        await client.SendMessage(962154266, "Presente 😼", cancellationToken: cancellationToken);
+        await client.NotifyOwners("Presente 😼");
         client.OnMessage += OnMessage;
         logger.LogInformation("@{u} is running", me.Username);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await client.SendMessage(
-            962154266,
-            "Torno a dormire 🌙",
-            cancellationToken: cancellationToken
-        );
+        await client.NotifyOwners("Torno a dormire 🌙");
         this.cancellationToken.Cancel();
         await Task.CompletedTask;
     }
