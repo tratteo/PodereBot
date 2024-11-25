@@ -13,8 +13,8 @@ namespace PodereBot.Lib.Commands;
     Description = "Abilito o disabilito l'apertura dei cancelli agli utenti 🔐",
     Admin = true
 )]
-internal class UnlockGatesCommand(
-    ILogger<UnlockGatesCommand> logger,
+internal class ManageGatesCommand(
+    ILogger<ManageGatesCommand> logger,
     Database database,
     Skin skin,
     IConfiguration configuration

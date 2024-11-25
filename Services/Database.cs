@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using PodereBot.Lib.Common;
 
 namespace PodereBot.Services;
 
@@ -12,11 +13,15 @@ public class DatabaseSchema
     [JsonProperty]
     public string? ActiveSkin { get; set; } = null;
 
+    [JsonProperty]
+    public HeatingProgram? HeatingProgram { get; set; }
+
     public DatabaseSchema Clone() =>
         new()
         {
             GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate,
-            ActiveSkin = ActiveSkin
+            ActiveSkin = ActiveSkin,
+            HeatingProgram = HeatingProgram
         };
 }
 

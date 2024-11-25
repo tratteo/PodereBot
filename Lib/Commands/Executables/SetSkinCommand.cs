@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -11,12 +10,12 @@ namespace PodereBot.Lib.Commands;
 
 [CommandMetadata(Key = "/setskin", Description = "Cambia la mia skin 🎨")]
 internal class SetSkinCommand(
-    ILogger<UploadSkinCommand> logger,
+    ILogger<SetSkinCommand> logger,
     Skin skin,
     IConfiguration configuration
 ) : Command(skin, logger, configuration)
 {
-    private readonly ILogger<UploadSkinCommand> logger = logger;
+    private readonly ILogger<SetSkinCommand> logger = logger;
     private readonly List<(string path, SkinSchema schema)> skins = skin.GetRegisteredSkins();
 
     protected override async Task ExecuteInternal()

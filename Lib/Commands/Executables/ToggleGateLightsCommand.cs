@@ -24,7 +24,6 @@ internal class ToggleGatesLightCommand(
 
     protected override async Task ExecuteInternal()
     {
-        await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.Typing);
         await gateDriver.ToggleLights();
         await Arguments.Client.SendAsset(Arguments.Message, skin.Schema.GatesLight);
         await Arguments.Client.SendMessage(

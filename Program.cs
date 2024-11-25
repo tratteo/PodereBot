@@ -30,10 +30,12 @@ var host = Host.CreateDefaultBuilder(args)
                 services.AddSingleton<IPinDriver, SerialPinDriver>();
             }
             services.AddSingleton<GateDriver>();
+            services.AddSingleton<HeatingDriver>();
             services.AddSingleton<Skin>();
             services.AddTransient<ConversationalResponder>();
             services.AddSingleton<Database>();
 
+            services.AddHostedService<HeartbeatBackgroundService>();
             services.AddHostedService<BotHostedService>();
         }
     )

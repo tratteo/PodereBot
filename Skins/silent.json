@@ -1,0 +1,12 @@
+{
+    "Metadata": {
+        "Name": "Silent",
+        "Author": "trat"
+    },
+    "Start": null,
+    "Unauthorized": null,
+    "AutomaticGateOpen": null,
+    "PedestrianGateOpen": null,
+    "GatesLight": null,
+    "Unavailable": null
+}
