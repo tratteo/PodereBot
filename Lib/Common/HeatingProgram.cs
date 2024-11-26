@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.Mvc.Diagnostics;
-
 namespace PodereBot.Lib.Common;
 
 public class HeatingProgram()
 {
-    public List<DayInterval> Intervals { get; private set; } = [];
+    public List<HeatingInterval> Intervals { get; private set; } = [];
 
-    private HeatingProgram(IEnumerable<DayInterval> intervals)
+    private HeatingProgram(IEnumerable<HeatingInterval> intervals)
         : this()
     {
         Intervals = intervals.ToList();
@@ -17,14 +15,27 @@ public class HeatingProgram()
         return string.Join("\n", Intervals);
     }
 
-    public bool IsActive()
+    public string ToCodeString()
+    {
+        return string.Join("/", Intervals.ConvertAll(i => i.ToCodeString()));
+    }
+
+    public HeatingInterval? GetFirstIntervalInProgram()
     {
         var date = DateTime.Now;
         var dayTimestamp = date.Hour * 3600 + date.Minute * 60;
-        return Intervals.Any(i => i.FromTimestamp <= dayTimestamp && i.ToTimestamp > dayTimestamp);
+        return Intervals.MinBy(i => i.FromTimestamp - dayTimestamp);
     }
 
-    public static bool TryBuild(IEnumerable<DayInterval> intervals, out HeatingProgram? program)
+    public bool IsScheduledActive(out HeatingInterval? interval)
+    {
+        var date = DateTime.Now;
+        var dayTimestamp = date.Hour * 3600 + date.Minute * 60;
+        interval = Intervals.FirstOrDefault(i => i.FromTimestamp <= dayTimestamp && i.ToTimestamp > dayTimestamp);
+        return interval != null;
+    }
+
+    public static bool TryBuild(IEnumerable<HeatingInterval> intervals, out HeatingProgram? program)
     {
         if (intervals.Count() > 1)
         {
@@ -34,13 +45,7 @@ public class HeatingProgram()
                 for (int j = i + 1; j < intervals.Count(); j++)
                 {
                     var second = intervals.ElementAt(j);
-                    if (
-                        (second.HoursFrom < first.HoursTo)
-                        || (
-                            second.HoursFrom == first.HoursTo
-                            && second.MinutesFrom < first.MinutesTo
-                        )
-                    )
+                    if ((second.HoursFrom < first.HoursTo) || (second.HoursFrom == first.HoursTo && second.MinutesFrom < first.MinutesTo))
                     {
                         program = null;
                         return false;

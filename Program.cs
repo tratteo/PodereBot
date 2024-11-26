@@ -1,4 +1,5 @@
-﻿using DotNetEnv.Configuration;
+﻿using System.Globalization;
+using DotNetEnv.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,9 +17,7 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(
         (host, services) =>
         {
-            services.Configure<ConsoleLifetimeOptions>(
-                options => options.SuppressStatusMessages = true
-            );
+            services.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true);
             services.AddCommands();
 
             if (string.IsNullOrEmpty(host.Configuration.GetValue<string>("SerialPort")))
@@ -29,17 +28,17 @@ var host = Host.CreateDefaultBuilder(args)
             {
                 services.AddSingleton<IPinDriver, SerialPinDriver>();
             }
+            services.AddSingleton<ITemperatureReader, MockTemperatureReader>();
             services.AddSingleton<GateDriver>();
-            services.AddSingleton<HeatingDriver>();
             services.AddSingleton<Skin>();
             services.AddTransient<ConversationalResponder>();
             services.AddSingleton<Database>();
-
-            services.AddHostedService<HeartbeatBackgroundService>();
+            services.AddHostedService<HeatingDaemon>();
             services.AddHostedService<BotHostedService>();
         }
     )
     .Build();
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 var loggerProvider = host.Services.GetRequiredService<ILoggerFactory>();
 var logger = loggerProvider.CreateLogger(string.Empty);
 await host.RunAsync();

@@ -2,15 +2,10 @@
 using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
 
 namespace PodereBot.Lib.Commands;
 
-[CommandMetadata(
-    Key = "/gatelight",
-    Description = "Accendo/spengo le luci dei cancelli 💡",
-    Admin = true
-)]
+[CommandMetadata(Key = "/gatelight", Description = "Accendo/spengo le luci dei cancelli 💡", Admin = true)]
 internal class ToggleGatesLightCommand(
     GateDriver gateDriver,
     Skin skin,

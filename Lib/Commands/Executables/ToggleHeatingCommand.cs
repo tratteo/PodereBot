@@ -1,8 +1,7 @@
-using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -11,11 +10,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib.Commands;
 
-// [CommandMetadata(
-//     Key = "/heating",
-//     Description = "Attiva o disattiva il riscaldamento",
-//     Admin = true
-// )]
+[CommandMetadata(Key = "/heating", Description = "Accendi o spegni il riscaldamento 🔥", Admin = true)]
 internal class ToggleHeatingCommand(
     ILogger<ToggleHeatingCommand> logger,
     Skin skin,
@@ -32,19 +27,32 @@ internal class ToggleHeatingCommand(
     protected override async Task ExecuteInternal()
     {
         AttachEvents();
+        if (db.Data.HeatingProgram?.IsScheduledActive(out var interval) ?? false)
+        {
+            await Arguments.Client.SendMessage(
+                Arguments.Message.Chat.Id,
+                $"""
+                🟡 Non puoi cambiare lo stato del riscaldamento quando è in programmazione.
+
+                 <b>🔥 Il riscaldamento è acceso a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>
+                """,
+                parseMode: ParseMode.Html,
+                disableNotification: true
+            );
+            await DetachEvents();
+            return;
+        }
+
         var kbd = new InlineKeyboardMarkup()
             .AddButton("🔥", EncodeCallbackQueryData(1))
             .AddButton("❄️", EncodeCallbackQueryData(0))
             .AddNewRow()
             .AddButton("Annulla", EncodeCallbackQueryData(-1));
-        var heatingActive = db.Data.HeatingProgram?.IsActive() ?? false;
+
         await Arguments
             .Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"""
-            Il riscaldamento è <b>{(heatingActive ? "acceso" : "spento")}</b>.
-            Vuoi attivare o disattivare il riscaldamento?
-            """,
+                $"Vuoi attivare o disattivare il riscaldamento?",
                 parseMode: ParseMode.Html,
                 replyMarkup: kbd,
                 disableNotification: true
@@ -58,12 +66,18 @@ internal class ToggleHeatingCommand(
         {
             return;
         }
+        var nextInterval = db.Data.HeatingProgram?.GetFirstIntervalInProgram();
         if (code == 0)
         {
             await pinDriver.PinLow(heatingPin);
+            db.Edit(d => d.HeatingActive = false);
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"Ho spento il riscaldamento ❄️",
+                $"""
+                Ho spento il riscaldamento ❄️
+                Le modifiche verrano mantenute fino alla prossima programmazione.
+                <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
+                """,
                 parseMode: ParseMode.Html,
                 disableNotification: true
             );
@@ -72,9 +86,14 @@ internal class ToggleHeatingCommand(
         else if (code == 1)
         {
             await pinDriver.PinHigh(heatingPin);
+            db.Edit(d => d.HeatingActive = true);
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"Ho acceso il riscaldamento 🔥",
+                $"""
+                Ho acceso il riscaldamento 🔥
+                Le modifiche verrano mantenute fino alla prossima programmazione.
+                <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
+                """,
                 parseMode: ParseMode.Html,
                 disableNotification: true
             );

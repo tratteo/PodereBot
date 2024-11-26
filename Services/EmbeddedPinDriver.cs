@@ -25,6 +25,7 @@ internal class EmbeddedPinDriver : IPinDriver
             try
             {
                 gpioController.OpenPin(i);
+
                 if (gpioController.IsPinModeSupported(i, PinMode.Output))
                 {
                     gpioController.SetPinMode(i, PinMode.Output);

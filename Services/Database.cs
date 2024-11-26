@@ -16,12 +16,16 @@ public class DatabaseSchema
     [JsonProperty]
     public HeatingProgram? HeatingProgram { get; set; }
 
+    [JsonIgnore]
+    public bool HeatingActive { get; set; } = false;
+
     public DatabaseSchema Clone() =>
         new()
         {
             GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate,
             ActiveSkin = ActiveSkin,
-            HeatingProgram = HeatingProgram
+            HeatingProgram = HeatingProgram,
+            HeatingActive = HeatingActive
         };
 }
 
