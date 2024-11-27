@@ -8,17 +8,9 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib.Commands;
 
-[CommandMetadata(
-    Key = "/gates",
-    Description = "Abilito o disabilito l'apertura dei cancelli agli utenti 🔐",
-    Admin = true
-)]
-internal class ManageGatesCommand(
-    ILogger<ManageGatesCommand> logger,
-    Database database,
-    Skin skin,
-    IConfiguration configuration
-) : Command(skin, logger, configuration)
+[CommandMetadata(Key = "/gates", Description = "Abilito o disabilito l'apertura dei cancelli agli utenti 🔐", Admin = true)]
+internal class ManageGatesCommand(ILogger<ManageGatesCommand> logger, Database database, Skin skin, IConfiguration configuration)
+    : Command(skin, logger, configuration)
 {
     private readonly Database database = database;
 
@@ -37,10 +29,9 @@ internal class ManageGatesCommand(
         kbd.AddNewRow();
         kbd.AddButton("Blocca", EncodeCallbackQueryData(0));
         kbd.AddNewRow();
-        kbd.AddButton("Annulla", EncodeCallbackQueryData(-1));
+        kbd.AddButton("Chiudi", EncodeCallbackQueryData(-1));
         var status =
-            database.Data.GatesOpenAccessExpirationDate == null
-            || database.Data.GatesOpenAccessExpirationDate < DateTime.Now
+            database.Data.GatesOpenAccessExpirationDate == null || database.Data.GatesOpenAccessExpirationDate < DateTime.Now
                 ? "🔒 I cancelli sono <b>bloccati</b>"
                 : $"🔓 I cancelli sono <b>sbloccati</b> fino al <b>{database.Data.GatesOpenAccessExpirationDate}</b>";
         await Arguments

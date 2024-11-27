@@ -27,12 +27,11 @@ public class HeatingProgram()
         return Intervals.MinBy(i => i.FromTimestamp - dayTimestamp);
     }
 
-    public bool IsScheduledActive(out HeatingInterval? interval)
+    public HeatingInterval? GetActiveInterval()
     {
         var date = DateTime.Now;
         var dayTimestamp = date.Hour * 3600 + date.Minute * 60;
-        interval = Intervals.FirstOrDefault(i => i.FromTimestamp <= dayTimestamp && i.ToTimestamp > dayTimestamp);
-        return interval != null;
+        return Intervals.FirstOrDefault(i => i.FromTimestamp <= dayTimestamp && i.ToTimestamp > dayTimestamp);
     }
 
     public static bool TryBuild(IEnumerable<HeatingInterval> intervals, out HeatingProgram? program)

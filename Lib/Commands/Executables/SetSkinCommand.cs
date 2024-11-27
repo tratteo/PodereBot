@@ -9,11 +9,8 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace PodereBot.Lib.Commands;
 
 [CommandMetadata(Key = "/setskin", Description = "Cambia la mia skin 🎨")]
-internal class SetSkinCommand(
-    ILogger<SetSkinCommand> logger,
-    Skin skin,
-    IConfiguration configuration
-) : Command(skin, logger, configuration)
+internal class SetSkinCommand(ILogger<SetSkinCommand> logger, Skin skin, IConfiguration configuration)
+    : Command(skin, logger, configuration)
 {
     private readonly ILogger<SetSkinCommand> logger = logger;
     private readonly List<(string path, SkinSchema schema)> skins = skin.GetRegisteredSkins();
@@ -25,17 +22,14 @@ internal class SetSkinCommand(
         for (int i = 0; i < skins.Count; i++)
         {
             var (path, schema) = skins[i];
-            kbd.AddButton(
-                $"{schema.Metadata.Name} ({schema.Metadata.Author})",
-                EncodeCallbackQueryData(i)
-            );
+            kbd.AddButton($"{schema.Metadata.Name} ({schema.Metadata.Author})", EncodeCallbackQueryData(i));
             if ((i + 1) % 3 == 0)
             {
                 kbd.AddNewRow();
             }
         }
         kbd.AddNewRow();
-        kbd.AddButton("Annulla", EncodeCallbackQueryData("cancel"));
+        kbd.AddButton("Chiudi", EncodeCallbackQueryData("cancel"));
         var skinData = $"{skin.Schema.Metadata.Name} ({skin.Schema.Metadata.Author})";
         await Arguments
             .Client.SendMessage(

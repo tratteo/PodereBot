@@ -10,11 +10,8 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace PodereBot.Lib.Commands;
 
 [CommandMetadata(Key = "/uploadskin", Description = "Carica una nuova skin 🆕")]
-internal class UploadSkinCommand(
-    ILogger<UploadSkinCommand> logger,
-    Skin skin,
-    IConfiguration configuration
-) : Command(skin, logger, configuration)
+internal class UploadSkinCommand(ILogger<UploadSkinCommand> logger, Skin skin, IConfiguration configuration)
+    : Command(skin, logger, configuration)
 {
     private readonly ILogger<UploadSkinCommand> logger = logger;
 
@@ -31,10 +28,7 @@ internal class UploadSkinCommand(
             Carica il file in chat appena sei pronto.
             """,
                 parseMode: ParseMode.Html,
-                replyMarkup: new InlineKeyboardMarkup().AddButton(
-                    "Annulla",
-                    EncodeCallbackQueryData("cancel")
-                ),
+                replyMarkup: new InlineKeyboardMarkup().AddButton("Chiudi", EncodeCallbackQueryData("cancel")),
                 disableNotification: true
             )
             .DeleteOnDetach(this);
@@ -53,24 +47,13 @@ internal class UploadSkinCommand(
         if (type != UpdateType.Message || message.Document == null)
             return;
 
-        var tmpPath = Path.Join(
-            AppContext.BaseDirectory,
-            "tmp",
-            $"{Guid.NewGuid()}_{message.Document.FileName}"
-        );
-        var destPath = Path.Join(
-            AppContext.BaseDirectory,
-            Globals.SKINS_PATH,
-            message.Document.FileName
-        );
+        var tmpPath = Path.Join(AppContext.BaseDirectory, "tmp", $"{Guid.NewGuid()}_{message.Document.FileName}");
+        var destPath = Path.Join(AppContext.BaseDirectory, Globals.SKINS_PATH, message.Document.FileName);
         Directory.CreateDirectory(Path.GetDirectoryName(tmpPath)!);
         Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
         try
         {
-            await Arguments.Client.SendChatAction(
-                Arguments.Message.Chat.Id,
-                ChatAction.UploadDocument
-            );
+            await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.UploadDocument);
             var file = await Arguments.Client.GetFile(message.Document!.FileId);
             using (var fileStream = new FileStream(tmpPath, FileMode.Create))
             {

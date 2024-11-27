@@ -58,7 +58,8 @@ internal class HeatingDaemon(
                     logger.LogWarning("no temperature data");
                     continue;
                 }
-                if (!program.IsScheduledActive(out var interval))
+                var interval = program.GetActiveInterval();
+                if (interval == null)
                 {
                     await ToggleHeating(false);
                     continue;

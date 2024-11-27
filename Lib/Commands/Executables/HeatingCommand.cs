@@ -12,38 +12,52 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib.Commands;
 
-[CommandMetadata(Key = "/programheating", Description = "Imposta il programma di riscaldamento 🔥", Admin = true)]
-internal class ProgramHeatingCommand(ILogger<ProgramHeatingCommand> logger, Skin skin, IConfiguration configuration, Database db)
-    : Command(skin, logger, configuration)
+[CommandMetadata(Key = "/heating", Description = "Gestisci il riscaldamento della casa 🔥", Admin = true)]
+internal class HeatingCommand(
+    ILogger<HeatingCommand> logger,
+    Skin skin,
+    IConfiguration configuration,
+    ITemperatureReader temperatureReader,
+    IPinDriver pinDriver,
+    Database db
+) : Command(skin, logger, configuration)
 {
-    private readonly ILogger<ProgramHeatingCommand> logger = logger;
+    private readonly ILogger<HeatingCommand> logger = logger;
+    private readonly ITemperatureReader temperatureReader = temperatureReader;
     private readonly Database db = db;
+    private readonly IPinDriver pinDriver = pinDriver;
+    private readonly int heatingPin = configuration.GetValue<int>("Pins:Heating");
 
     protected override async Task ExecuteInternal()
     {
         AttachEvents();
-        var kbd = new InlineKeyboardMarkup().AddButton("Annulla", EncodeCallbackQueryData("cancel"));
-        if (db.Data.HeatingProgram != null)
-        {
-            kbd.AddButton("Disattiva", EncodeCallbackQueryData("delete"));
-        }
+        var kbd = new InlineKeyboardMarkup();
         var msg = new StringBuilder();
-        if (db.Data.HeatingActive)
+        var temperature = await temperatureReader.GetTemperature();
+        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        msg.AppendLine($"🌡️ Temperatura: <b>{(temperature != null ? $"{temperature:F2}°" : "Non disponibile")}</b>\n");
+        if (interval == null)
         {
-            msg.AppendLine($"<b>🔥 Riscaldamento acceso manualmente</b>");
+            kbd.AddButton("🔥 Accendi", EncodeCallbackQueryData("on")).AddButton("❄️ Spegni", EncodeCallbackQueryData("off")).AddNewRow();
+            if (db.Data.HeatingActive)
+            {
+                msg.AppendLine($"<b>🔥 Riscaldamento acceso manualmente</b>");
+            }
+            else
+            {
+                msg.AppendLine($"<b>❄️ Riscaldamento spento</b>");
+            }
         }
-        else if (db.Data.HeatingProgram?.IsScheduledActive(out var interval) ?? false)
+        else
         {
             msg.AppendLine(
                 $"<b>🔥 Riscaldamento acceso a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
             );
         }
-        else
-        {
-            msg.AppendLine($"<b>❄️ Riscaldamento spento</b>");
-        }
+
         if (db.Data.HeatingProgram != null)
         {
+            kbd.AddButton("Rimuovi programma", EncodeCallbackQueryData("delete")).AddNewRow();
             msg.AppendLine(
                 $"""
                 La pianificazione attuale: 
@@ -54,19 +68,15 @@ internal class ProgramHeatingCommand(ILogger<ProgramHeatingCommand> logger, Skin
         }
         else
         {
-            msg.AppendLine("La pianificazione non è impostata");
+            msg.AppendLine("La pianificazione non è impostata.");
         }
-
+        kbd.AddButton("Chiudi", EncodeCallbackQueryData("cancel"));
         await Arguments
             .Client.SendMessage(
                 Arguments.Message.Chat.Id,
                 $"""
             {msg}
-            Fornisci gli intervalli in cui voi che il riscaldamento si accenda, utilizza il seguente formato:
-            <code>hh:mm-hh:mm@t/.../hh:mm-hh:mm@t</code>
-
-            Per rimuovere la programmazione attuale clicca <b>Disattiva</b>.
-            Inviami la pianificazione per messaggio quando sei pronto.
+            Inviami la nuova pianificazione per messaggio se vuoi cambiarla. Utilizza il seguente formato per gli intervalli: <code>hh:mm-hh:mm@t/.../hh:mm-hh:mm@t</code>
             """,
                 parseMode: ParseMode.Html,
                 replyMarkup: kbd,
@@ -77,10 +87,49 @@ internal class ProgramHeatingCommand(ILogger<ProgramHeatingCommand> logger, Skin
 
     protected override async Task OnCallback(Update update, string callbackData)
     {
+        var nextInterval = db.Data.HeatingProgram?.GetFirstIntervalInProgram();
         if (callbackData == "delete")
         {
-            db.Edit(d => d.HeatingProgram = null);
+            var currentInterval = db.Data.HeatingProgram?.GetActiveInterval();
+            db.Edit(d =>
+            {
+                d.HeatingProgram = null;
+                if (currentInterval != null)
+                    d.HeatingActive = false;
+            });
+            if (currentInterval != null)
+                await pinDriver.PinLow(heatingPin);
             await Arguments.Client.SendMessage(Arguments.Message.Chat.Id, $"🟢 Ho rimosso la programmazione", disableNotification: true);
+        }
+        else if (callbackData == "off")
+        {
+            await pinDriver.PinLow(heatingPin);
+            db.Edit(d => d.HeatingActive = false);
+            await Arguments.Client.SendMessage(
+                Arguments.Message.Chat.Id,
+                $"""
+                Ho spento il riscaldamento ❄️
+                Le modifiche verrano mantenute fino alla prossima programmazione.
+                <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
+                """,
+                parseMode: ParseMode.Html,
+                disableNotification: true
+            );
+        }
+        else if (callbackData == "on")
+        {
+            await pinDriver.PinHigh(heatingPin);
+            db.Edit(d => d.HeatingActive = true);
+            await Arguments.Client.SendMessage(
+                Arguments.Message.Chat.Id,
+                $"""
+                Ho acceso il riscaldamento 🔥
+                Le modifiche verrano mantenute fino alla prossima programmazione.
+                <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
+                """,
+                parseMode: ParseMode.Html,
+                disableNotification: true
+            );
         }
         await DetachEvents();
     }
@@ -167,7 +216,8 @@ internal class ProgramHeatingCommand(ILogger<ProgramHeatingCommand> logger, Skin
         }
         db.Edit(d => d.HeatingProgram = program);
         var msg = new StringBuilder();
-        if (db.Data.HeatingProgram?.IsScheduledActive(out var interval) ?? false)
+        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        if (interval != null)
         {
             msg.AppendLine(
                 $"<b>🔥 Riscaldamento acceso a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
@@ -183,7 +233,6 @@ internal class ProgramHeatingCommand(ILogger<ProgramHeatingCommand> logger, Skin
             $"""
             🟢 Ho aggiornato la programmazione:
             <blockquote>{program}</blockquote>            
-            
             {msg}
             """,
             parseMode: ParseMode.Html,
