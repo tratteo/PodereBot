@@ -33,9 +33,10 @@ internal class HeatingCommand(
         AttachEvents();
         var kbd = new InlineKeyboardMarkup();
         var msg = new StringBuilder();
-        var temperature = await temperatureReader.GetTemperature();
+        await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.Typing);
+
         var interval = db.Data.HeatingProgram?.GetActiveInterval();
-        msg.AppendLine($"🌡️ Temperatura: <b>{(temperature != null ? $"{temperature:F2}°" : "Non disponibile")}</b>\n");
+        msg.AppendLine($"🌡️ Sto calcolando la temperatura...\n");
         if (interval == null)
         {
             kbd.AddButton("🔥 Accendi", EncodeCallbackQueryData("on")).AddButton("❄️ Spegni", EncodeCallbackQueryData("off")).AddNewRow();
@@ -71,18 +72,35 @@ internal class HeatingCommand(
             msg.AppendLine("La pianificazione non è impostata.");
         }
         kbd.AddButton("Chiudi", EncodeCallbackQueryData("cancel"));
-        await Arguments
+        msg.AppendLine();
+        msg.AppendLine(
+            "Inviami la nuova pianificazione per messaggio se vuoi cambiarla. Utilizza il seguente formato per gli intervalli: <code>hh:mm-hh:mm@t/.../hh:mm-hh:mm@t</code>"
+        );
+        var message = await Arguments
             .Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"""
-            {msg}
-            Inviami la nuova pianificazione per messaggio se vuoi cambiarla. Utilizza il seguente formato per gli intervalli: <code>hh:mm-hh:mm@t/.../hh:mm-hh:mm@t</code>
-            """,
+                msg.ToString(),
                 parseMode: ParseMode.Html,
                 replyMarkup: kbd,
                 disableNotification: true
             )
             .DeleteOnDetach(this);
+        _ = temperatureReader
+            .GetTemperature()
+            .ContinueWith(
+                (val) =>
+                    Arguments.Client.EditMessageText(
+                        message.Chat.Id,
+                        message.Id,
+                        msg.ToString()
+                            .Replace(
+                                "Sto calcolando la temperatura...",
+                                $"Temperatura: <b>{(val.Result != null ? $"{val.Result:F3}°" : "Non disponibile")}</b>"
+                            ),
+                        parseMode: ParseMode.Html,
+                        replyMarkup: kbd
+                    )
+            );
     }
 
     protected override async Task OnCallback(Update update, string callbackData)
@@ -108,7 +126,8 @@ internal class HeatingCommand(
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
                 $"""
-                Ho spento il riscaldamento ❄️
+                <b>Ho spento il riscaldamento ❄️</b>
+
                 Le modifiche verrano mantenute fino alla prossima programmazione.
                 <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
                 """,
@@ -123,7 +142,8 @@ internal class HeatingCommand(
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
                 $"""
-                Ho acceso il riscaldamento 🔥
+                <b>Ho acceso il riscaldamento 🔥</b>
+
                 Le modifiche verrano mantenute fino alla prossima programmazione.
                 <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
                 """,

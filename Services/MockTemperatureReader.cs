@@ -11,9 +11,10 @@ internal class MockTemperatureReader(ILogger<MockTemperatureReader> logger, Data
     private readonly Random random = new();
     private double currentTemp = 18;
 
-    public Task<float?> GetTemperature(CancellationToken? token = null)
+    public async Task<float?> GetTemperature(CancellationToken? token = null)
     {
+        await Task.Delay(random.Next(250, 1000));
         currentTemp = db.Data.HeatingActive ? currentTemp + random.NextDouble() * 0.2 : currentTemp - random.NextDouble() * 0.2;
-        return Task.FromResult((float?)currentTemp);
+        return await Task.FromResult((float?)currentTemp);
     }
 }
