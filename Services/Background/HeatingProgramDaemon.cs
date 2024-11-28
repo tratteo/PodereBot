@@ -3,15 +3,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 
-internal class HeatingDaemon(
-    ILogger<HeatingDaemon> logger,
+internal class HeatingProgramDaemon(
+    ILogger<HeatingProgramDaemon> logger,
     IPinDriver pinDriver,
     ITemperatureReader temperatureReader,
     IConfiguration configuration,
     Database db
 ) : BackgroundService
 {
-    private readonly ILogger<HeatingDaemon> logger = logger;
+    private readonly ILogger<HeatingProgramDaemon> logger = logger;
     private readonly Database db = db;
     private readonly IPinDriver pinDriver = pinDriver;
     private readonly ITemperatureReader temperatureReader = temperatureReader;
@@ -19,17 +19,15 @@ internal class HeatingDaemon(
     private readonly TimeSpan daemonPollInterval = TimeSpan.FromSeconds(configuration.GetValue<int?>("Heating:PollIntervalSeconds") ?? 10);
     private readonly TimeSpan thresholdTolerance = TimeSpan.FromSeconds(configuration.GetValue<int?>("Heating:ToleranceSeconds") ?? 600);
     private TimeSpan actionDelay = TimeSpan.Zero;
-    private bool heatingActive = false;
 
     public async Task ToggleHeating(bool enabled)
     {
-        if (enabled == heatingActive)
+        if (enabled == db.Data.HeatingActive)
             return;
 
         actionDelay = TimeSpan.Zero;
-        heatingActive = enabled;
         db.Edit(d => d.HeatingActive = enabled);
-        logger.LogInformation("heating: {h}", enabled);
+        logger.LogInformation("setting heating: {h}", enabled);
         if (enabled)
         {
             await pinDriver.PinHigh(heatingPin);
@@ -40,6 +38,17 @@ internal class HeatingDaemon(
         }
     }
 
+    public override async Task StartAsync(CancellationToken cancellationToken)
+    {
+        var temperature = await temperatureReader.GetTemperature(cancellationToken);
+        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        if (temperature != null && interval != null && temperature < interval.Temperature - 1)
+        {
+            await ToggleHeating(true);
+        }
+        await base.StartAsync(cancellationToken);
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using PeriodicTimer timer = new(daemonPollInterval);
@@ -47,6 +56,7 @@ internal class HeatingDaemon(
         {
             try
             {
+                //logger.LogInformation("heating daemon beat");
                 var program = db.Data.HeatingProgram;
                 if (program == null)
                 {
@@ -58,6 +68,7 @@ internal class HeatingDaemon(
                     logger.LogWarning("no temperature data");
                     continue;
                 }
+                logger.LogTrace("heating: {h}, temp: {t}", db.Data.HeatingActive, temperature);
                 var interval = program.GetActiveInterval();
                 if (interval == null)
                 {
@@ -65,7 +76,7 @@ internal class HeatingDaemon(
                     continue;
                 }
 
-                if (heatingActive)
+                if (db.Data.HeatingActive)
                 {
                     if (temperature > interval!.Temperature && actionDelay >= thresholdTolerance)
                     {
@@ -92,7 +103,7 @@ internal class HeatingDaemon(
             }
             catch (Exception ex)
             {
-                logger.LogWarning("Failed with exception message {e}. Good luck next round!", ex.Message);
+                logger.LogWarning("failed with exception message {e}. Good luck next round!", ex.Message);
             }
         }
     }

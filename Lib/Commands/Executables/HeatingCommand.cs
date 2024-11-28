@@ -149,6 +149,7 @@ internal class HeatingCommand(
         }
         var splits = message.Text.Split("/");
         var intervals = new List<HeatingInterval>();
+        var temperature = await temperatureReader.GetTemperature();
         var matcher = @"(?<hfrom>[0-2]?\d):?(?<mfrom>[0-5]\d)?-(?<hto>[0-2]?\d):?(?<mto>[0-5]\d)?@(?<temp>[0-9]+(\.[0-9]+)?)";
         foreach (var s in splits)
         {
@@ -219,8 +220,13 @@ internal class HeatingCommand(
         var interval = db.Data.HeatingProgram?.GetActiveInterval();
         if (interval != null)
         {
+            if (temperature != null && temperature < interval.Temperature - 1)
+            {
+                db.Edit(d => d.HeatingActive = true);
+                await pinDriver.PinHigh(heatingPin);
+            }
             msg.AppendLine(
-                $"<b>🔥 Riscaldamento acceso a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
+                $"<b>🔥 Riscaldamento programmato a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
             );
         }
         else

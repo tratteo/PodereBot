@@ -28,12 +28,12 @@ var host = Host.CreateDefaultBuilder(args)
             {
                 services.AddSingleton<IPinDriver, SerialPinDriver>();
             }
-            services.AddSingleton<ITemperatureReader, MockTemperatureReader>();
+            services.AddSingleton<ITemperatureReader, OneWireEmbeddedTemperatureReader>();
             services.AddSingleton<GateDriver>();
             services.AddSingleton<Skin>();
             services.AddTransient<ConversationalResponder>();
             services.AddSingleton<Database>();
-            services.AddHostedService<HeatingDaemon>();
+            services.AddHostedService<HeatingProgramDaemon>();
             services.AddHostedService<BotHostedService>();
         }
     )
