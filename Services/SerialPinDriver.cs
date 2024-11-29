@@ -27,10 +27,10 @@ internal class SerialPinDriver : IPinDriver
         }
     }
 
-    public Task PinHigh(int? pin)
+    public void PinHigh(int? pin)
     {
         if (pin == null)
-            return Task.CompletedTask;
+            return;
         try
         {
             serialPort?.Write($"h{pin}");
@@ -40,13 +40,17 @@ internal class SerialPinDriver : IPinDriver
         {
             logger.LogTrace(ex, "error writing to serial port {p}", serialPort);
         }
-        return Task.CompletedTask;
     }
 
-    public Task PinLow(int? pin)
+    public int? DigitalRead(int? pin)
+    {
+        return null;
+    }
+
+    public void PinLow(int? pin)
     {
         if (pin == null)
-            return Task.CompletedTask;
+            return;
         try
         {
             serialPort?.Write($"l{pin}");
@@ -56,6 +60,5 @@ internal class SerialPinDriver : IPinDriver
         {
             logger.LogTrace(ex, "error writing to serial port {p}", serialPort);
         }
-        return Task.CompletedTask;
     }
 }

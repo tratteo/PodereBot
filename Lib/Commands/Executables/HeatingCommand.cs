@@ -17,49 +17,82 @@ internal class HeatingCommand(
     ILogger<HeatingCommand> logger,
     Skin skin,
     IConfiguration configuration,
-    ITemperatureReader temperatureReader,
-    IPinDriver pinDriver,
+    HeatingDriver heatingDriver,
     Database db
 ) : Command(skin, logger, configuration)
 {
-    private readonly ILogger<HeatingCommand> logger = logger;
-    private readonly ITemperatureReader temperatureReader = temperatureReader;
-    private readonly Database db = db;
-    private readonly IPinDriver pinDriver = pinDriver;
-    private readonly int heatingPin = configuration.GetValue<int>("Pins:Heating");
+    private readonly System.Timers.Timer tempPollTimer = new(TimeSpan.FromSeconds(4));
 
-    protected override async Task ExecuteInternal()
+    protected override Task OnDetach()
     {
-        AttachEvents();
-        var kbd = new InlineKeyboardMarkup();
-        var msg = new StringBuilder();
-        await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.Typing);
+        tempPollTimer.Stop();
+        return Task.CompletedTask;
+    }
 
+    private InlineKeyboardMarkup GetInlineKeyboardMarkup()
+    {
+        var kbd = new InlineKeyboardMarkup();
         var interval = db.Data.HeatingProgram?.GetActiveInterval();
-        msg.AppendLine($"🌡️ Sto calcolando la temperatura...\n");
         if (interval == null)
         {
-            kbd.AddButton("🔥 Accendi", EncodeCallbackQueryData("on")).AddButton("❄️ Spegni", EncodeCallbackQueryData("off")).AddNewRow();
-            if (db.Data.HeatingActive)
+            kbd.AddButton("🔥 Accendi", EncodeCallbackQueryData("on"));
+            kbd.AddButton("❄️ Spegni", EncodeCallbackQueryData("off"));
+            kbd.AddNewRow();
+        }
+        if (db.Data.HeatingProgram != null)
+        {
+            kbd.AddButton("Rimuovi programma", EncodeCallbackQueryData("delete")).AddNewRow();
+        }
+        kbd.AddButton("Chiudi", EncodeCallbackQueryData("cancel"));
+        return kbd;
+    }
+
+    private StringBuilder GetHtmlStatusMessage(string temperatureLine)
+    {
+        var html = new StringBuilder().AppendLine(temperatureLine);
+        var boilerActive = heatingDriver.IsBoilerActive();
+        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        if (interval == null)
+        {
+            if (boilerActive && db.Data.ManualHeatingActive)
             {
-                msg.AppendLine($"<b>🔥 Riscaldamento acceso manualmente</b>");
+                html.AppendLine($"<b>🥵 Riscaldamento acceso manualmente</b>");
             }
             else
             {
-                msg.AppendLine($"<b>❄️ Riscaldamento spento</b>");
+                html.AppendLine($"<b>🥶 Riscaldamento spento</b>");
             }
         }
         else
         {
-            msg.AppendLine(
-                $"<b>🔥 Riscaldamento acceso a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
+            html.AppendLine(
+                $"🕓 Riscaldamento programmato a <b>{interval!.Temperature}°</b> fino alle <b>{interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
             );
         }
+        if (boilerActive)
+        {
+            html.AppendLine("🔥 Caldaia <b>accesa</b>");
+        }
+        else
+        {
+            html.AppendLine("❄️ Caldaia <b>spenta</b>");
+        }
+        return html;
+    }
+
+    protected override async Task ExecuteInternal()
+    {
+        AttachEvents();
+        await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.Typing);
+
+        var boilerActive = heatingDriver.IsBoilerActive();
+        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        var html = GetHtmlStatusMessage($"🌡️ Sto calcolando la temperatura...");
+        html.AppendLine();
 
         if (db.Data.HeatingProgram != null)
         {
-            kbd.AddButton("Rimuovi programma", EncodeCallbackQueryData("delete")).AddNewRow();
-            msg.AppendLine(
+            html.AppendLine(
                 $"""
                 La pianificazione attuale: 
                 <blockquote>{db.Data.HeatingProgram}</blockquote>
@@ -69,38 +102,54 @@ internal class HeatingCommand(
         }
         else
         {
-            msg.AppendLine("La pianificazione non è impostata.");
+            html.AppendLine("La pianificazione non è impostata.");
         }
-        kbd.AddButton("Chiudi", EncodeCallbackQueryData("cancel"));
-        msg.AppendLine();
-        msg.AppendLine(
+
+        html.AppendLine();
+        html.AppendLine(
             "Inviami la nuova pianificazione per messaggio se vuoi cambiarla. Utilizza il seguente formato per gli intervalli: <code>hh:mm-hh:mm@t/.../hh:mm-hh:mm@t</code>"
         );
         var message = await Arguments
             .Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                msg.ToString(),
+                html.ToString(),
                 parseMode: ParseMode.Html,
-                replyMarkup: kbd,
+                replyMarkup: GetInlineKeyboardMarkup(),
                 disableNotification: true
             )
             .DeleteOnDetach(this);
-        _ = temperatureReader
-            .GetTemperature()
-            .ContinueWith(
-                (val) =>
-                    Arguments.Client.EditMessageText(
-                        message.Chat.Id,
-                        message.Id,
-                        msg.ToString()
-                            .Replace(
-                                "Sto calcolando la temperatura...",
-                                $"Temperatura: <b>{(val.Result != null ? $"{val.Result:F3}°" : "Non disponibile")}</b>"
-                            ),
-                        parseMode: ParseMode.Html,
-                        replyMarkup: kbd
-                    )
+
+        UpdateStatusMessage(message, html.ToString());
+        tempPollTimer.Elapsed += (_, _) => UpdateStatusMessage(message, html.ToString());
+        tempPollTimer.Start();
+    }
+
+    private async void UpdateStatusMessage(Message? message, string msgHtml)
+    {
+        if (message == null)
+            return;
+
+        var lines = msgHtml.Split("\n");
+        if (lines.Length <= 0)
+            return;
+        var temp = await heatingDriver.GetRoomTemperature();
+        var html = GetHtmlStatusMessage($"🌡️ Temperatura: <b>{(temp != null ? $"{temp:F2}°" : "Non disponibile")}</b>");
+        var htmlLines = html.ToString().Split("\n").ToList().FindAll(l => l.Length > 0);
+        for (int i = 0; i < Math.Min(htmlLines.Count, lines.Length); i++)
+        {
+            lines[i] = htmlLines[i];
+        }
+        try
+        {
+            await Arguments.Client.EditMessageText(
+                message.Chat.Id,
+                message.Id,
+                string.Join("\n", lines),
+                parseMode: ParseMode.Html,
+                replyMarkup: GetInlineKeyboardMarkup()
             );
+        }
+        catch (Exception) { }
     }
 
     protected override async Task OnCallback(Update update, string callbackData)
@@ -112,17 +161,15 @@ internal class HeatingCommand(
             db.Edit(d =>
             {
                 d.HeatingProgram = null;
-                if (currentInterval != null)
-                    d.HeatingActive = false;
             });
             if (currentInterval != null)
-                await pinDriver.PinLow(heatingPin);
+                heatingDriver.SwitchHeating(false);
             await Arguments.Client.SendMessage(Arguments.Message.Chat.Id, $"🟢 Ho rimosso la programmazione", disableNotification: true);
         }
         else if (callbackData == "off")
         {
-            await pinDriver.PinLow(heatingPin);
-            db.Edit(d => d.HeatingActive = false);
+            heatingDriver.SwitchHeating(false);
+            db.Edit(d => d.ManualHeatingActive = false);
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
                 $"""
@@ -137,8 +184,8 @@ internal class HeatingCommand(
         }
         else if (callbackData == "on")
         {
-            await pinDriver.PinHigh(heatingPin);
-            db.Edit(d => d.HeatingActive = true);
+            heatingDriver.SwitchHeating(true);
+            db.Edit(d => d.ManualHeatingActive = true);
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
                 $"""
@@ -160,16 +207,10 @@ internal class HeatingCommand(
         await DetachEvents();
     }
 
-    protected override async Task OnMessage(Message message, UpdateType type)
+    private async Task<HeatingProgram?> ParseProgram(string pattern)
     {
-        if (message.Text == null)
-        {
-            await UpdateError($"Valore non valido!");
-            return;
-        }
-        var splits = message.Text.Split("/");
+        var splits = pattern.Split("/");
         var intervals = new List<HeatingInterval>();
-        var temperature = await temperatureReader.GetTemperature();
         var matcher = @"(?<hfrom>[0-2]?\d):?(?<mfrom>[0-5]\d)?-(?<hto>[0-2]?\d):?(?<mto>[0-5]\d)?@(?<temp>[0-9]+(\.[0-9]+)?)";
         foreach (var s in splits)
         {
@@ -180,12 +221,12 @@ internal class HeatingCommand(
             )
             {
                 await UpdateError($"I valori forniti non sono corretti 😭");
-                return;
+                return null;
             }
             if (!float.TryParse(m.Groups.GetValueOrDefault("temp")?.Value, CultureInfo.InvariantCulture, out var temp))
             {
                 await UpdateError($"Il valore della temperatura non è corretto");
-                return;
+                return null;
             }
             if (!int.TryParse(m.Groups.GetValueOrDefault("mfrom")?.Value, out var minFrom))
             {
@@ -199,24 +240,24 @@ internal class HeatingCommand(
             if (hoursFrom > 24 || hoursTo > 24)
             {
                 await UpdateError($"I valori delle ore non possono essere maggiori di 24");
-                return;
+                return null;
             }
             if ((hoursFrom == 24 && minFrom > 0) || (hoursTo == 24 && minTo > 0))
             {
                 await UpdateError($"I minuti non possono essere maggiori di 0 se il valore delle ore è 24");
-                return;
+                return null;
             }
             if (hoursFrom > hoursTo)
             {
                 await UpdateError($"L'ora di inizio non può essere maggiore dell'ora di fine dell'intervallo! {hoursFrom} > {hoursTo}");
-                return;
+                return null;
             }
             else if (hoursFrom == hoursTo && minFrom > minTo)
             {
                 await UpdateError(
                     $"I minuti di inizio non possono essere maggiori dei minuti di fine dell'intervallo! {minFrom} > {minTo}"
                 );
-                return;
+                return null;
             }
             intervals.Add(
                 new HeatingInterval()
@@ -233,40 +274,73 @@ internal class HeatingCommand(
         if (!HeatingProgram.TryBuild(intervals, out var program))
         {
             await UpdateError($"Gli intervalli non sono in ordine!");
-            return;
+            return null;
         }
-        db.Edit(d => d.HeatingProgram = program);
-        var msg = new StringBuilder();
-        var interval = db.Data.HeatingProgram?.GetActiveInterval();
-        if (interval != null)
-        {
-            if (temperature != null && temperature < interval.Temperature - 1)
-            {
-                db.Edit(d => d.HeatingActive = true);
-                await pinDriver.PinHigh(heatingPin);
-            }
-            msg.AppendLine(
-                $"<b>🔥 Riscaldamento programmato a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
-            );
-        }
-        else
-        {
-            msg.AppendLine($"<b>❄️ Riscaldamento spento</b>");
-        }
+        return program;
+    }
 
-        await Arguments.Client.SendMessage(
-            Arguments.Message.Chat.Id,
-            $"""
+    protected override async Task OnMessage(Message message, UpdateType type)
+    {
+        try
+        {
+            if (message.Text == null)
+            {
+                await UpdateError($"Valore non valido!");
+                return;
+            }
+
+            var program = await ParseProgram(message.Text);
+
+            if (program == null)
+                return;
+            db.Edit(d => d.HeatingProgram = program);
+            var msg = new StringBuilder();
+            var temperature = await heatingDriver.GetRoomTemperature();
+
+            var interval = db.Data.HeatingProgram?.GetActiveInterval();
+            var nextInterval = db.Data.HeatingProgram?.GetFirstIntervalInProgram();
+            if (interval != null)
+            {
+                if (temperature != null && temperature < interval.Temperature - 1)
+                {
+                    heatingDriver.SwitchHeating(true);
+                }
+                msg.AppendLine(
+                    $"<b>🕓 Riscaldamento programmato a {interval!.Temperature}° fino alle {interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
+                );
+            }
+            else if (nextInterval != null)
+            {
+                msg.AppendLine(
+                    $"<b>🕓 Riscaldamento programmato a {nextInterval!.Temperature}° dalle {nextInterval.HoursFrom:D2}:{nextInterval.MinutesFrom:D2}</b>"
+                );
+            }
+
+            if (heatingDriver.IsBoilerActive())
+            {
+                msg.AppendLine("🔥 Caldaia <b>accesa</b>");
+            }
+            else
+            {
+                msg.AppendLine("❄️ Caldaia <b>spenta</b>");
+            }
+
+            await Arguments.Client.SendMessage(
+                Arguments.Message.Chat.Id,
+                $"""
             🟢 Ho aggiornato la programmazione:
             <blockquote>{program}</blockquote>            
             {msg}
             """,
-            parseMode: ParseMode.Html,
-            disableNotification: true
-        );
+                parseMode: ParseMode.Html,
+                disableNotification: true
+            );
 
-        logger.LogInformation("detaching events");
-
-        await DetachEvents();
+            await DetachEvents();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("{e}", ex);
+        }
     }
 }

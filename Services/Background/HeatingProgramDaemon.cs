@@ -1,110 +1,101 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PodereBot.Lib.Common;
 using PodereBot.Services;
 
 internal class HeatingProgramDaemon(
     ILogger<HeatingProgramDaemon> logger,
-    IPinDriver pinDriver,
-    ITemperatureReader temperatureReader,
     IConfiguration configuration,
-    Database db
+    Database db,
+    HeatingDriver heatingDriver
 ) : BackgroundService
 {
-    private readonly ILogger<HeatingProgramDaemon> logger = logger;
-    private readonly Database db = db;
-    private readonly IPinDriver pinDriver = pinDriver;
-    private readonly ITemperatureReader temperatureReader = temperatureReader;
-    private readonly int heatingPin = configuration.GetValue<int>("Pins:Heating");
     private readonly TimeSpan daemonPollInterval = TimeSpan.FromSeconds(configuration.GetValue<int?>("Heating:PollIntervalSeconds") ?? 10);
     private readonly TimeSpan thresholdTolerance = TimeSpan.FromSeconds(configuration.GetValue<int?>("Heating:ToleranceSeconds") ?? 600);
     private TimeSpan actionDelay = TimeSpan.Zero;
+    private HeatingInterval? lastInterval;
 
-    public async Task ToggleHeating(bool enabled)
+    public void ToggleHeating(bool enabled)
     {
-        if (enabled == db.Data.HeatingActive)
-            return;
-
+        heatingDriver.SwitchHeating(enabled);
         actionDelay = TimeSpan.Zero;
-        db.Edit(d => d.HeatingActive = enabled);
-        logger.LogInformation("setting heating: {h}", enabled);
-        if (enabled)
-        {
-            await pinDriver.PinHigh(heatingPin);
-        }
-        else
-        {
-            await pinDriver.PinLow(heatingPin);
-        }
-    }
-
-    public override async Task StartAsync(CancellationToken cancellationToken)
-    {
-        var temperature = await temperatureReader.GetTemperature(cancellationToken);
-        var interval = db.Data.HeatingProgram?.GetActiveInterval();
-        if (temperature != null && interval != null && temperature < interval.Temperature - 1)
-        {
-            await ToggleHeating(true);
-        }
-        await base.StartAsync(cancellationToken);
+        //logger.LogInformation("setting heating: {h}", enabled);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using PeriodicTimer timer = new(daemonPollInterval);
-        while (!stoppingToken.IsCancellationRequested && await timer.WaitForNextTickAsync(stoppingToken))
+        do
         {
             try
             {
-                //logger.LogInformation("heating daemon beat");
-                var program = db.Data.HeatingProgram;
-                if (program == null)
-                {
+                // If there is no program, quit
+                if (db.Data.HeatingProgram == null)
                     continue;
-                }
-                var temperature = await temperatureReader.GetTemperature(stoppingToken);
+
+                // If temperature is not available, quit
+                var temperature = await heatingDriver.GetRoomTemperature(stoppingToken);
                 if (temperature == null)
                 {
                     logger.LogWarning("no temperature data");
                     continue;
                 }
-                logger.LogTrace("heating: {h}, temp: {t}", db.Data.HeatingActive, temperature);
-                var interval = program.GetActiveInterval();
-                if (interval == null)
+
+                var currentInterval = db.Data.HeatingProgram.GetActiveInterval();
+                //* Entered a new interval
+                if (currentInterval != null && lastInterval == null)
                 {
-                    await ToggleHeating(false);
-                    continue;
+                    logger.LogInformation("entered a new interval");
+                    db.Edit(d => d.ManualHeatingActive = false);
+                    if (temperature < currentInterval.Temperature - 0.5)
+                    {
+                        ToggleHeating(true);
+                    }
+                }
+                //* Exited from the current interval
+                else if (currentInterval == null && lastInterval != null)
+                {
+                    logger.LogInformation("exited a new interval");
+                    // We exited the current interval
+                    // TODO turn off heater indipendently of timer
+                    ToggleHeating(false);
+                }
+                else if (currentInterval != null)
+                {
+                    logger.LogInformation("inside an interval");
+                    var boilerActive = heatingDriver.IsBoilerActive();
+                    if (boilerActive)
+                    {
+                        if (temperature > currentInterval!.Temperature && actionDelay >= thresholdTolerance)
+                        {
+                            ToggleHeating(false);
+                        }
+                        else if (temperature <= currentInterval!.Temperature)
+                        {
+                            actionDelay = TimeSpan.Zero;
+                        }
+                    }
+                    else
+                    {
+                        if (temperature < currentInterval!.Temperature && actionDelay >= thresholdTolerance)
+                        {
+                            ToggleHeating(true);
+                        }
+                        else if (temperature >= currentInterval!.Temperature)
+                        {
+                            actionDelay = TimeSpan.Zero;
+                        }
+                    }
                 }
 
-                if (db.Data.HeatingActive)
-                {
-                    if (temperature > interval!.Temperature && actionDelay >= thresholdTolerance)
-                    {
-                        await ToggleHeating(false);
-                    }
-                    else if (temperature <= interval!.Temperature)
-                    {
-                        actionDelay = TimeSpan.Zero;
-                    }
-                }
-                else
-                {
-                    if (temperature < interval!.Temperature && actionDelay >= thresholdTolerance)
-                    {
-                        await ToggleHeating(true);
-                    }
-                    else if (temperature >= interval!.Temperature)
-                    {
-                        actionDelay = TimeSpan.Zero;
-                    }
-                }
-
+                lastInterval = currentInterval;
                 actionDelay = actionDelay.Add(daemonPollInterval);
             }
             catch (Exception ex)
             {
                 logger.LogWarning("failed with exception message {e}. Good luck next round!", ex.Message);
             }
-        }
+        } while (!stoppingToken.IsCancellationRequested && await timer.WaitForNextTickAsync(stoppingToken));
     }
 }

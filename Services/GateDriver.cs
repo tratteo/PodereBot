@@ -9,11 +9,7 @@ public enum GateId
     pedestrian
 }
 
-internal class GateDriver(
-    ILogger<GateDriver> logger,
-    IPinDriver pinDriver,
-    IConfiguration configuration
-)
+internal class GateDriver(ILogger<GateDriver> logger, IPinDriver pinDriver, IConfiguration configuration)
 {
     const int IMPULSE_DURATION_MS = 600;
 
@@ -25,9 +21,9 @@ internal class GateDriver(
     {
         int? pin = configuration.GetValue<int>("Pins:GatesLight");
         logger.LogDebug("serial pin: {p}", pin);
-        await pinDriver.PinHigh(pin);
+        pinDriver.PinHigh(pin);
         await Task.Delay(IMPULSE_DURATION_MS);
-        await pinDriver.PinLow(pin);
+        pinDriver.PinLow(pin);
     }
 
     public async Task Open(GateId gate)
@@ -42,8 +38,8 @@ internal class GateDriver(
                 pin = configuration.GetValue<int>("Pins:PedestrianGate");
                 break;
         }
-        await pinDriver.PinHigh(pin);
+        pinDriver.PinHigh(pin);
         await Task.Delay(IMPULSE_DURATION_MS);
-        await pinDriver.PinLow(pin);
+        pinDriver.PinLow(pin);
     }
 }

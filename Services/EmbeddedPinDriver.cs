@@ -48,10 +48,10 @@ internal class EmbeddedPinDriver : IPinDriver
         gpioController.Dispose();
     }
 
-    public Task PinHigh(int? pin)
+    public void PinHigh(int? pin)
     {
         if (pin == null)
-            return Task.CompletedTask;
+            return;
 
         try
         {
@@ -63,13 +63,12 @@ internal class EmbeddedPinDriver : IPinDriver
         {
             logger.LogTrace(ex, "error accessing pin {p}", pin);
         }
-        return Task.CompletedTask;
     }
 
-    public Task PinLow(int? pin)
+    public void PinLow(int? pin)
     {
         if (pin == null)
-            return Task.CompletedTask;
+            return;
 
         try
         {
@@ -81,6 +80,13 @@ internal class EmbeddedPinDriver : IPinDriver
         {
             logger.LogTrace(ex, "error accessing pin {p}", pin);
         }
-        return Task.CompletedTask;
+        return;
+    }
+
+    public int? DigitalRead(int? pin)
+    {
+        if (pin == null)
+            return null;
+        return gpioController.Read((int)pin) == PinValue.High ? 1 : 0;
     }
 }

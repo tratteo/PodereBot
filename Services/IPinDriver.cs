@@ -1,5 +1,6 @@
 internal interface IPinDriver
 {
-    Task PinHigh(int? pin);
-    Task PinLow(int? pin);
+    int? DigitalRead(int? pin);
+    void PinHigh(int? pin);
+    void PinLow(int? pin);
 }

@@ -17,7 +17,10 @@ public class DatabaseSchema
     public HeatingProgram? HeatingProgram { get; set; }
 
     [JsonIgnore]
-    public bool HeatingActive { get; set; } = false;
+    public bool BoilerActive { get; set; }
+
+    [JsonIgnore]
+    public bool ManualHeatingActive { get; set; }
 
     public DatabaseSchema Clone() =>
         new()
@@ -25,7 +28,8 @@ public class DatabaseSchema
             GatesOpenAccessExpirationDate = GatesOpenAccessExpirationDate,
             ActiveSkin = ActiveSkin,
             HeatingProgram = HeatingProgram,
-            HeatingActive = HeatingActive
+            BoilerActive = BoilerActive,
+            ManualHeatingActive = ManualHeatingActive
         };
 }
 
@@ -55,12 +59,13 @@ internal class Database
     private void Save()
     {
         File.WriteAllTextAsync(DB_PATH, JsonConvert.SerializeObject(data));
-        logger.LogDebug("local db serialized > {p}", DB_PATH);
+        logger.LogTrace("local db serialized > {p}", DB_PATH);
     }
 
     public void Edit(Action<DatabaseSchema> modifier)
     {
         modifier?.Invoke(data);
+
         Save();
     }
 }

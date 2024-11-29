@@ -65,6 +65,11 @@ internal abstract class Command(Skin skin, ILogger<Command> logger, IConfigurati
         Arguments.Client.OnMessage += OnMessage;
     }
 
+    protected virtual Task OnDetach()
+    {
+        return Task.CompletedTask;
+    }
+
     protected async Task DetachEvents()
     {
         Arguments.Client.OnUpdate -= OnUpdateInternal;
@@ -77,6 +82,7 @@ internal abstract class Command(Skin skin, ILogger<Command> logger, IConfigurati
         {
             await Arguments.Client.EditMessageReplyMarkup(message.Chat.Id, message.MessageId);
         }
+        await OnDetach();
     }
 
     private async Task<bool> HandleAuthorization(CommandArguments arguments)
@@ -87,16 +93,9 @@ internal abstract class Command(Skin skin, ILogger<Command> logger, IConfigurati
         var admins = configuration.GetSection("Admins").Get<long[]>()?.ToList() ?? [];
         if (!admins.Contains(arguments.Message.From!.Id))
         {
-            await arguments.Client.SendChatAction(
-                arguments.Message.Chat.Id,
-                ChatAction.ChooseSticker
-            );
+            await arguments.Client.SendChatAction(arguments.Message.Chat.Id, ChatAction.ChooseSticker);
             await arguments.Client.SendAsset(arguments.Message, skin.Schema.Unauthorized);
-            await arguments.Client.SendMessage(
-                arguments.Message.Chat.Id,
-                "Non hai abbastanza poteri canide 🐶",
-                disableNotification: true
-            );
+            await arguments.Client.SendMessage(arguments.Message.Chat.Id, "Non hai abbastanza poteri canide 🐶", disableNotification: true);
             return false;
         }
         return true;
