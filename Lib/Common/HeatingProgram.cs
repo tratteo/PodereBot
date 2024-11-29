@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace PodereBot.Lib.Common;
 
 public class HeatingProgram()
@@ -12,7 +14,11 @@ public class HeatingProgram()
 
     public override string ToString()
     {
-        return string.Join("\n", Intervals);
+        var builder = new StringBuilder();
+        Intervals.ForEach(i => builder.AppendLine(i.ToString()));
+        var duration = TimeSpan.FromSeconds(Intervals.Sum(i => i.ToTimestamp - i.FromTimestamp));
+        builder.AppendLine($"Tempo in attività: {duration.Hours}h {duration.Minutes}m");
+        return builder.ToString();
     }
 
     public string ToCodeString()
@@ -20,14 +26,14 @@ public class HeatingProgram()
         return string.Join("/", Intervals.ConvertAll(i => i.ToCodeString()));
     }
 
-    public HeatingInterval? GetFirstIntervalInProgram()
+    public HeatingInterval? GetNextInterval()
     {
         var date = DateTime.Now;
         var dayTimestamp = date.Hour * 3600 + date.Minute * 60;
         return Intervals.MinBy(i => i.FromTimestamp - dayTimestamp);
     }
 
-    public HeatingInterval? GetActiveInterval()
+    public HeatingInterval? GetCurrentInterval()
     {
         var date = DateTime.Now;
         var dayTimestamp = date.Hour * 3600 + date.Minute * 60;

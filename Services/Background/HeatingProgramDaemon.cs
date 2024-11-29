@@ -20,7 +20,6 @@ internal class HeatingProgramDaemon(
     {
         heatingDriver.SwitchHeating(enabled);
         actionDelay = TimeSpan.Zero;
-        //logger.LogInformation("setting heating: {h}", enabled);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,15 +37,15 @@ internal class HeatingProgramDaemon(
                 var temperature = await heatingDriver.GetRoomTemperature(stoppingToken);
                 if (temperature == null)
                 {
-                    logger.LogWarning("no temperature data");
+                    logger.LogTrace("no temperature data");
                     continue;
                 }
 
-                var currentInterval = db.Data.HeatingProgram.GetActiveInterval();
+                var currentInterval = db.Data.HeatingProgram.GetCurrentInterval();
                 //* Entered a new interval
                 if (currentInterval != null && lastInterval == null)
                 {
-                    logger.LogInformation("entered a new interval");
+                    logger.LogTrace("entered a new interval {i}", currentInterval.ToCodeString());
                     db.Edit(d => d.ManualHeatingActive = false);
                     if (temperature < currentInterval.Temperature - 0.5)
                     {
@@ -56,14 +55,12 @@ internal class HeatingProgramDaemon(
                 //* Exited from the current interval
                 else if (currentInterval == null && lastInterval != null)
                 {
-                    logger.LogInformation("exited a new interval");
-                    // We exited the current interval
-                    // TODO turn off heater indipendently of timer
+                    logger.LogTrace("exited interval");
                     ToggleHeating(false);
                 }
+                //* Currently in an interval
                 else if (currentInterval != null)
                 {
-                    logger.LogInformation("inside an interval");
                     var boilerActive = heatingDriver.IsBoilerActive();
                     if (boilerActive)
                     {

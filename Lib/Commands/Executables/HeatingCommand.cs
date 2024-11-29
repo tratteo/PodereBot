@@ -32,7 +32,7 @@ internal class HeatingCommand(
     private InlineKeyboardMarkup GetInlineKeyboardMarkup()
     {
         var kbd = new InlineKeyboardMarkup();
-        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        var interval = db.Data.HeatingProgram?.GetCurrentInterval();
         if (interval == null)
         {
             kbd.AddButton("🔥 Accendi", EncodeCallbackQueryData("on"));
@@ -51,7 +51,7 @@ internal class HeatingCommand(
     {
         var html = new StringBuilder().AppendLine(temperatureLine);
         var boilerActive = heatingDriver.IsBoilerActive();
-        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        var interval = db.Data.HeatingProgram?.GetCurrentInterval();
         if (interval == null)
         {
             if (boilerActive && db.Data.ManualHeatingActive)
@@ -61,6 +61,13 @@ internal class HeatingCommand(
             else
             {
                 html.AppendLine($"<b>🥶 Riscaldamento spento</b>");
+            }
+            var nextInterval = db.Data.HeatingProgram?.GetNextInterval();
+            if (nextInterval != null)
+            {
+                html.AppendLine(
+                    $"🕓 Dalle <b>{nextInterval.HoursFrom:D2}:{nextInterval.MinutesFrom:D2}</b> è programmato a <b>{nextInterval!.Temperature}°</b>"
+                );
             }
         }
         else
@@ -77,6 +84,7 @@ internal class HeatingCommand(
         {
             html.AppendLine("❄️ Caldaia <b>spenta</b>");
         }
+        html.Append(new string('_', 25));
         return html;
     }
 
@@ -86,7 +94,7 @@ internal class HeatingCommand(
         await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.Typing);
 
         var boilerActive = heatingDriver.IsBoilerActive();
-        var interval = db.Data.HeatingProgram?.GetActiveInterval();
+        var interval = db.Data.HeatingProgram?.GetCurrentInterval();
         var html = GetHtmlStatusMessage($"🌡️ Sto calcolando la temperatura...");
         html.AppendLine();
 
@@ -94,6 +102,7 @@ internal class HeatingCommand(
         {
             html.AppendLine(
                 $"""
+
                 La pianificazione attuale: 
                 <blockquote>{db.Data.HeatingProgram}</blockquote>
                 <code>{db.Data.HeatingProgram.ToCodeString()}</code>
@@ -129,22 +138,15 @@ internal class HeatingCommand(
         if (message == null)
             return;
 
-        var lines = msgHtml.Split("\n");
-        if (lines.Length <= 0)
-            return;
         var temp = await heatingDriver.GetRoomTemperature();
-        var html = GetHtmlStatusMessage($"🌡️ Temperatura: <b>{(temp != null ? $"{temp:F2}°" : "Non disponibile")}</b>");
-        var htmlLines = html.ToString().Split("\n").ToList().FindAll(l => l.Length > 0);
-        for (int i = 0; i < Math.Min(htmlLines.Count, lines.Length); i++)
-        {
-            lines[i] = htmlLines[i];
-        }
+        var html = GetHtmlStatusMessage($"🌡️ Temperatura: <b>{(temp != null ? $"{temp:F2}°" : "non disponibile 😵")}</b>");
+        msgHtml = Regex.Replace(msgHtml, @"^[^_]*_+[\n\r]", html.ToString());
         try
         {
             await Arguments.Client.EditMessageText(
                 message.Chat.Id,
                 message.Id,
-                string.Join("\n", lines),
+                msgHtml,
                 parseMode: ParseMode.Html,
                 replyMarkup: GetInlineKeyboardMarkup()
             );
@@ -154,10 +156,10 @@ internal class HeatingCommand(
 
     protected override async Task OnCallback(Update update, string callbackData)
     {
-        var nextInterval = db.Data.HeatingProgram?.GetFirstIntervalInProgram();
+        var nextInterval = db.Data.HeatingProgram?.GetNextInterval();
         if (callbackData == "delete")
         {
-            var currentInterval = db.Data.HeatingProgram?.GetActiveInterval();
+            var currentInterval = db.Data.HeatingProgram?.GetCurrentInterval();
             db.Edit(d =>
             {
                 d.HeatingProgram = null;
@@ -297,8 +299,8 @@ internal class HeatingCommand(
             var msg = new StringBuilder();
             var temperature = await heatingDriver.GetRoomTemperature();
 
-            var interval = db.Data.HeatingProgram?.GetActiveInterval();
-            var nextInterval = db.Data.HeatingProgram?.GetFirstIntervalInProgram();
+            var interval = db.Data.HeatingProgram?.GetCurrentInterval();
+            var nextInterval = db.Data.HeatingProgram?.GetNextInterval();
             if (interval != null)
             {
                 if (temperature != null && temperature < interval.Temperature - 1)
