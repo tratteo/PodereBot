@@ -30,7 +30,7 @@ public class HeatingProgram()
     {
         var date = DateTime.Now;
         var dayTimestamp = date.Hour * 3600 + date.Minute * 60;
-        return Intervals.MinBy(i => i.FromTimestamp - dayTimestamp);
+        return Intervals.Where(i => i.FromTimestamp > dayTimestamp).MinBy(i => i.FromTimestamp - dayTimestamp);
     }
 
     public HeatingInterval? GetCurrentInterval()
