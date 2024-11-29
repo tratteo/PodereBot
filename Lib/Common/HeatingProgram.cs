@@ -17,7 +17,7 @@ public class HeatingProgram()
         var builder = new StringBuilder();
         Intervals.ForEach(i => builder.AppendLine(i.ToString()));
         var duration = TimeSpan.FromSeconds(Intervals.Sum(i => i.ToTimestamp - i.FromTimestamp));
-        builder.AppendLine($"Tempo in attività: {duration.Hours}h {duration.Minutes}m");
+        builder.Append($"Tempo in attività: {duration.Hours}h {duration.Minutes}m");
         return builder.ToString();
     }
 

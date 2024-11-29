@@ -21,7 +21,7 @@ internal class HeatingCommand(
     Database db
 ) : Command(skin, logger, configuration)
 {
-    private readonly System.Timers.Timer tempPollTimer = new(TimeSpan.FromSeconds(4));
+    private readonly System.Timers.Timer tempPollTimer = new(TimeSpan.FromSeconds(5));
 
     protected override Task OnDetach()
     {
@@ -97,12 +97,11 @@ internal class HeatingCommand(
         var interval = db.Data.HeatingProgram?.GetCurrentInterval();
         var html = GetHtmlStatusMessage($"🌡️ Sto calcolando la temperatura...");
         html.AppendLine();
-
+        html.AppendLine();
         if (db.Data.HeatingProgram != null)
         {
             html.AppendLine(
                 $"""
-
                 La pianificazione attuale: 
                 <blockquote>{db.Data.HeatingProgram}</blockquote>
                 <code>{db.Data.HeatingProgram.ToCodeString()}</code>
@@ -140,7 +139,7 @@ internal class HeatingCommand(
 
         var temp = await heatingDriver.GetRoomTemperature();
         var html = GetHtmlStatusMessage($"🌡️ Temperatura: <b>{(temp != null ? $"{temp:F2}°" : "non disponibile 😵")}</b>");
-        msgHtml = Regex.Replace(msgHtml, @"^[^_]*_+[\n\r]", html.ToString());
+        msgHtml = Regex.Replace(msgHtml, @"^[^_]*_+", html.ToString());
         try
         {
             await Arguments.Client.EditMessageText(
