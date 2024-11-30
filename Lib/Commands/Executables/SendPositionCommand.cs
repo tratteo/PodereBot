@@ -1,16 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using PodereBot.Services;
+﻿using PodereBot.Services;
 using Telegram.Bot;
 
 namespace PodereBot.Lib.Commands;
 
 [CommandMetadata(Key = "/sendpos", Description = "Ti mando la posizione di casa 📍")]
-internal class SendPositionCommand(
-    Skin skin,
-    ILogger<SendPositionCommand> logger,
-    IConfiguration configuration
-) : Command(skin, logger, configuration)
+internal class SendPositionCommand(Skin skin, ILogger<SendPositionCommand> logger, IConfiguration configuration)
+    : Command(skin, logger, configuration)
 {
     protected override async Task ExecuteInternal()
     {

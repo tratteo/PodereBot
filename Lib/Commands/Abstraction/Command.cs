@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;

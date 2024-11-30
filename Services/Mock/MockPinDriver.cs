@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace PodereBot.Services;
 
 internal class MockPinDriver(ILogger<MockPinDriver> logger) : IPinDriver

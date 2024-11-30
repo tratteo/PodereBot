@@ -1,8 +1,6 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using PodereBot.Lib.Common;
 using PodereBot.Services;
 using Telegram.Bot;
@@ -21,11 +19,11 @@ internal class HeatingCommand(
     Database db
 ) : Command(skin, logger, configuration)
 {
-    private readonly System.Timers.Timer tempPollTimer = new(TimeSpan.FromSeconds(5));
+    private readonly System.Timers.Timer refreshTimer = new(TimeSpan.FromSeconds(5));
 
     protected override Task OnDetach()
     {
-        tempPollTimer.Stop();
+        refreshTimer.Stop();
         return Task.CompletedTask;
     }
 
@@ -128,8 +126,8 @@ internal class HeatingCommand(
             .DeleteOnDetach(this);
 
         UpdateStatusMessage(message, html.ToString());
-        tempPollTimer.Elapsed += (_, _) => UpdateStatusMessage(message, html.ToString());
-        tempPollTimer.Start();
+        refreshTimer.Elapsed += (_, _) => UpdateStatusMessage(message, html.ToString());
+        refreshTimer.Start();
     }
 
     private async void UpdateStatusMessage(Message? message, string msgHtml)
@@ -137,7 +135,7 @@ internal class HeatingCommand(
         if (message == null)
             return;
 
-        var temp = await heatingDriver.GetRoomTemperature();
+        var temp = await heatingDriver.GetOperationalTemperature();
         var html = GetHtmlStatusMessage($"🌡️ Temperatura: <b>{(temp != null ? $"{temp:F2}°" : "non disponibile 😵")}</b>");
         msgHtml = Regex.Replace(msgHtml, @"^[^_]*_+", html.ToString());
         try
@@ -296,7 +294,7 @@ internal class HeatingCommand(
                 return;
             db.Edit(d => d.HeatingProgram = program);
             var msg = new StringBuilder();
-            var temperature = await heatingDriver.GetRoomTemperature();
+            var temperature = await heatingDriver.GetOperationalTemperature();
 
             var interval = db.Data.HeatingProgram?.GetCurrentInterval();
             var nextInterval = db.Data.HeatingProgram?.GetNextInterval();

@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using PodereBot.Lib.Common;
 using PodereBot.Services;
 
@@ -34,7 +31,7 @@ internal class HeatingProgramDaemon(
                     continue;
 
                 // If temperature is not available, quit
-                var temperature = await heatingDriver.GetRoomTemperature(stoppingToken);
+                var temperature = await heatingDriver.GetOperationalTemperature(stoppingToken);
                 if (temperature == null)
                 {
                     logger.LogTrace("no temperature data");

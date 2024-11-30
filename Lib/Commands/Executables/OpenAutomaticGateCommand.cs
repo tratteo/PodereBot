@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using PodereBot.Lib.Commands.Abstract;
+﻿using PodereBot.Lib.Commands.Abstract;
 using PodereBot.Services;
 
 namespace PodereBot.Lib.Commands;

@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-
 namespace PodereBot.Services;
 
 public enum GateId

@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -20,8 +18,7 @@ internal abstract class AbstractOpenGateCommand(
     private readonly GateDriver gateDriver = gateDriver;
     private readonly Database db = db;
     private readonly GateId gateId = gateId;
-    private readonly List<long> adminIds =
-        configuration.GetSection("Admins").Get<long[]>()?.ToList() ?? [];
+    private readonly List<long> adminIds = configuration.GetSection("Admins").Get<long[]>()?.ToList() ?? [];
     protected abstract string GateName { get; }
     protected abstract Asset? Asset { get; }
 
@@ -33,9 +30,7 @@ internal abstract class AbstractOpenGateCommand(
         }
         else
         {
-            var canOpen =
-                db.Data.GatesOpenAccessExpirationDate != null
-                && DateTime.Now < db.Data.GatesOpenAccessExpirationDate;
+            var canOpen = db.Data.GatesOpenAccessExpirationDate != null && DateTime.Now < db.Data.GatesOpenAccessExpirationDate;
             if (!canOpen)
             {
                 await Arguments.Client.SendAsset(Arguments.Message, skin.Schema.Unavailable);
@@ -85,7 +80,8 @@ internal abstract class AbstractOpenGateCommand(
             if (!adminIds.Contains(Arguments.Message.From!.Id))
             {
                 await Arguments.Client.NotifyOwners(
-                    $"🔑 <b>{Arguments.Message.From.Username}</b> ha aperto il cancello {GateName}"
+                    $"🔑 <b>{Arguments.Message.From.Username}</b> ha aperto il cancello {GateName}",
+                    logger
                 );
             }
         }

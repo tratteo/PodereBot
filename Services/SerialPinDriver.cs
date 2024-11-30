@@ -1,6 +1,4 @@
 ﻿using System.IO.Ports;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace PodereBot.Services;
 

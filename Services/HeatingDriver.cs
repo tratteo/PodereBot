@@ -1,28 +1,45 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using PodereBot.Services;
 
 internal class HeatingDriver(
     ILogger<HeatingDriver> logger,
     IPinDriver pinDriver,
     IConfiguration configuration,
-    ITemperatureReader temperatureReader,
+    ITemperatureDriver temperatureReader,
     Database db
 )
 {
     private readonly ILogger<HeatingDriver> logger = logger;
     private readonly IPinDriver pinDriver = pinDriver;
-    private readonly ITemperatureReader temperatureReader = temperatureReader;
+    private readonly ITemperatureDriver temperatureReader = temperatureReader;
     private readonly int heatingPin = configuration.GetValue<int>("Pins:Heating");
+    private readonly TimeSpan readingsTimespan = TimeSpan.FromSeconds(
+        configuration.GetValue<int?>("Heating:TempSensorsToleranceSeconds") ?? 60
+    );
 
     public bool IsBoilerActive()
     {
         return pinDriver.DigitalRead(heatingPin) == 1;
     }
 
-    public Task<float?> GetRoomTemperature(CancellationToken? cancellationToken = null)
+    public async Task<float?> GetOperationalTemperature(CancellationToken? cancellationToken = null)
     {
-        return temperatureReader.GetTemperature(cancellationToken);
+        var readings = temperatureReader.GetExternalTemperatureReadings(readingsTimespan);
+        var temperatures = readings.ConvertAll(r => r.Temperature);
+        var localTemperature = await temperatureReader.GetLocalTemperature(cancellationToken);
+        if (localTemperature != null)
+            temperatures.Add((float)localTemperature);
+        if (temperatures.Count > 0)
+        {
+            logger.LogDebug(
+                "{c} external temp readings [avg: {r}, min: {m}, max: {min}]",
+                readings.Count,
+                temperatures.Average(),
+                temperatures.Min(),
+                temperatures.Max()
+            );
+            return temperatures.Average();
+        }
+        return null;
     }
 
     public void SwitchHeating(bool status)

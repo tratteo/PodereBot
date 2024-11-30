@@ -1,8 +1,4 @@
 ﻿using System.Reflection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using PodereBot.Lib;
 using PodereBot.Lib.Commands;
 using Telegram.Bot;
@@ -20,20 +16,12 @@ internal class BotHostedService : IHostedService
     private readonly Skin skin;
     private readonly List<CommandRegistryKey> commandEntries;
 
-    public BotHostedService(
-        ILogger<BotHostedService> logger,
-        IConfiguration configuration,
-        IServiceProvider services,
-        Skin skin
-    )
+    public BotHostedService(ILogger<BotHostedService> logger, IConfiguration configuration, IServiceProvider services, Skin skin)
     {
         this.skin = skin;
         this.logger = logger;
         this.services = services;
-        client = new TelegramBotClient(
-            configuration.GetValue<string>("TELEGRAM_API_KEY")!,
-            cancellationToken: cancellationToken.Token
-        );
+        client = new TelegramBotClient(configuration.GetValue<string>("TELEGRAM_API_KEY")!, cancellationToken: cancellationToken.Token);
         commandEntries = Assembly.GetExecutingAssembly().GetCommands();
         logger.LogInformation("registered {c} commands", commandEntries.Count);
     }
@@ -45,24 +33,17 @@ internal class BotHostedService : IHostedService
         await client.SetMyDescription($"Che vuoi?", cancellationToken: cancellationToken);
         await client.SetMyShortDescription($"Che vuoi?", cancellationToken: cancellationToken);
         await client.SetMyCommands(
-            commandEntries.ConvertAll(
-                c =>
-                    new BotCommand()
-                    {
-                        Command = c.metadata.Key,
-                        Description = c.metadata.Description
-                    }
-            ),
+            commandEntries.ConvertAll(c => new BotCommand() { Command = c.metadata.Key, Description = c.metadata.Description }),
             cancellationToken: cancellationToken
         );
-        await client.NotifyOwners("Presente 😼");
+        await client.NotifyOwners("Presente 😼", logger);
         client.OnMessage += OnMessage;
         logger.LogInformation("@{u} is running", me.Username);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await client.NotifyOwners("Torno a dormire 🌙");
+        await client.NotifyOwners("Torno a dormire 🌙", logger);
         this.cancellationToken.Cancel();
         await Task.CompletedTask;
     }
@@ -83,10 +64,7 @@ internal class BotHostedService : IHostedService
                 var cmdService = (Command?)services.GetService(match.commandType);
                 if (cmdService == null)
                 {
-                    logger.LogWarning(
-                        "unable to retrieve command service of type {t}",
-                        match.commandType
-                    );
+                    logger.LogWarning("unable to retrieve command service of type {t}", match.commandType);
                     return;
                 }
 

@@ -1,9 +1,6 @@
 ﻿using System.Globalization;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using PodereBot.Lib;
+using PodereBot.Lib.Api;
 using PodereBot.Services;
 using PodereBot.Services.Hosted;
 
@@ -11,46 +8,49 @@ Console.Title = "Podere Bot";
 Console.WriteLine("========== Podere Bot ==========\n");
 
 DotNetEnv.Env.Load();
-var host = Host.CreateDefaultBuilder(args)
-    .ConfigureAppConfiguration(builder =>
+var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:5050");
+builder.Configuration.AddEnvironmentVariables();
+builder.Services.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true);
+builder.Services.AddCommands();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<ITemperatureDriver, MockTemperatureDriver>();
+    builder.Services.AddSingleton<IPinDriver, MockPinDriver>();
+}
+else
+{
+    builder.Services.AddSingleton<ITemperatureDriver, OneWireEmbeddedTemperatureDriver>();
+    if (string.IsNullOrEmpty(builder.Configuration.GetValue<string>("SerialPort")))
     {
-        builder.AddEnvironmentVariables();
-    })
-    .ConfigureServices(
-        (host, services) =>
-        {
-            services.Configure<ConsoleLifetimeOptions>(options => options.SuppressStatusMessages = true);
-            services.AddCommands();
-            if (host.HostingEnvironment.IsDevelopment())
-            {
-                services.AddSingleton<ITemperatureReader, MockTemperatureReader>();
-                services.AddSingleton<IPinDriver, MockPinDriver>();
-            }
-            else
-            {
-                services.AddSingleton<ITemperatureReader, OneWireEmbeddedTemperatureReader>();
-                if (string.IsNullOrEmpty(host.Configuration.GetValue<string>("SerialPort")))
-                {
-                    services.AddSingleton<IPinDriver, EmbeddedPinDriver>();
-                }
-                else
-                {
-                    services.AddSingleton<IPinDriver, SerialPinDriver>();
-                }
-            }
+        builder.Services.AddSingleton<IPinDriver, EmbeddedPinDriver>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<IPinDriver, SerialPinDriver>();
+    }
+}
 
-            services.AddSingleton<GateDriver>();
-            services.AddSingleton<Skin>();
-            services.AddSingleton<HeatingDriver>();
-            services.AddTransient<ConversationalResponder>();
-            services.AddSingleton<Database>();
-            services.AddHostedService<HeatingProgramDaemon>();
-            services.AddHostedService<BotHostedService>();
-        }
-    )
-    .Build();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<GateDriver>();
+builder.Services.AddSingleton<Skin>();
+builder.Services.AddSingleton<HeatingDriver>();
+builder.Services.AddTransient<ConversationalResponder>();
+builder.Services.AddSingleton<Database>();
+builder.Services.AddHostedService<HeatingProgramDaemon>();
+builder.Services.AddHostedService<BotHostedService>();
+
+var app = builder.Build();
+
+app.Use(Middleware.RestrictToLocalNetwork);
+app.UseApiEndpoints();
+app.UseSwagger();
+app.UseSwaggerUI();
+
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-var loggerProvider = host.Services.GetRequiredService<ILoggerFactory>();
+var loggerProvider = app.Services.GetRequiredService<ILoggerFactory>();
 var logger = loggerProvider.CreateLogger(string.Empty);
-logger.LogInformation("env: [{env}]", host.Services.GetService<IHostEnvironment>()?.EnvironmentName);
-await host.RunAsync();
+logger.LogInformation("env: [{env}]", app.Services.GetService<IHostEnvironment>()?.EnvironmentName);
+await app.RunAsync();

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace PodereBot.Services;
 
@@ -42,16 +41,8 @@ internal class SkinSchema
         return new SkinSchema()
         {
             Metadata = new Metadata() { Name = "Default", Author = "trat" },
-            Start = new Asset()
-            {
-                Source = "https://media1.tenor.com/m/NXMs9_FlGpcAAAAd/rage-emoji-rage.gif",
-                Type = AssetType.gif
-            },
-            Unauthorized = new Asset()
-            {
-                Source = "https://media1.tenor.com/m/SMiE27y-ExsAAAAd/ban-banned.gif",
-                Type = AssetType.gif
-            },
+            Start = new Asset() { Source = "https://media1.tenor.com/m/NXMs9_FlGpcAAAAd/rage-emoji-rage.gif", Type = AssetType.gif },
+            Unauthorized = new Asset() { Source = "https://media1.tenor.com/m/SMiE27y-ExsAAAAd/ban-banned.gif", Type = AssetType.gif },
             AutomaticGateOpen = null,
             PedestrianGateOpen = null,
             Unavailable = null,
@@ -97,11 +88,7 @@ internal class Skin
     public List<(string path, SkinSchema schema)> GetRegisteredSkins()
     {
         List<(string, SkinSchema)> schemas = [];
-        foreach (
-            var skinFile in Directory.GetFiles(
-                Path.Join(AppContext.BaseDirectory, Globals.SKINS_PATH)
-            )
-        )
+        foreach (var skinFile in Directory.GetFiles(Path.Join(AppContext.BaseDirectory, Globals.SKINS_PATH)))
         {
             try
             {

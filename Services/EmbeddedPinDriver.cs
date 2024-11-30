@@ -1,6 +1,4 @@
 using System.Device.Gpio;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace PodereBot.Services;
 

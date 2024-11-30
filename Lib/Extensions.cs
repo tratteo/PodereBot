@@ -1,5 +1,5 @@
 ﻿using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
+using PodereBot.Lib.Api;
 using PodereBot.Lib.Commands;
 using PodereBot.Services;
 using Telegram.Bot;
@@ -10,12 +10,41 @@ namespace PodereBot.Lib;
 
 public static class Extensions
 {
-    internal static async Task NotifyOwners(this TelegramBotClient client, string message)
+    public static bool IsLocal(this HttpRequest req)
     {
-        List<int> ids = [962154266];
-        await Task.WhenAll(
-            ids.ConvertAll(i => client.SendMessage(i, message, parseMode: ParseMode.Html))
-        );
+        var connection = req.HttpContext.Connection;
+        if (connection.RemoteIpAddress == null)
+            return false;
+
+        var bytes = connection.RemoteIpAddress.GetAddressBytes();
+        if (bytes.Length < 4)
+            return false;
+
+        return (bytes[0] == 192 && bytes[1] == 168) || (bytes[0] == 127 && bytes[1] == 0 && bytes[2] == 0 && bytes[3] == 1);
+    }
+
+    internal static void UseApiEndpoints(this WebApplication app)
+    {
+        foreach (var type in Assembly.GetExecutingAssembly().GetTypes())
+        {
+            if (!typeof(IEndpoint).IsAssignableFrom(type) || type.IsInterface || type.IsAbstract)
+                continue;
+            var endpoint = Activator.CreateInstance(type) as IEndpoint;
+            endpoint?.MapEndpoint(app);
+        }
+    }
+
+    internal static async Task NotifyOwners(this TelegramBotClient client, string message, ILogger? logger = null)
+    {
+        try
+        {
+            List<int> ids = [962154266];
+            await Task.WhenAll(ids.ConvertAll(i => client.SendMessage(i, message, parseMode: ParseMode.Html)));
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError("error notifying admins {e}", ex);
+        }
     }
 
     internal static async Task<Message> CleanupOnDetach(this Task<Message> msgTask, Command command)
@@ -131,11 +160,7 @@ public static class Extensions
         return new ReactionTypeEmoji() { Emoji = available[random.Next(0, available.Count)] };
     }
 
-    internal static async Task SendAsset(
-        this TelegramBotClient client,
-        Message message,
-        Asset? asset
-    )
+    internal static async Task SendAsset(this TelegramBotClient client, Message message, Asset? asset)
     {
         if (asset == null)
             return;
@@ -143,27 +168,15 @@ public static class Extensions
         switch (asset.Type)
         {
             case AssetType.video:
-                await client.SendVideo(
-                    message.Chat.Id,
-                    InputFile.FromString(asset.Source),
-                    disableNotification: true
-                );
+                await client.SendVideo(message.Chat.Id, InputFile.FromString(asset.Source), disableNotification: true);
                 break;
             case AssetType.image:
                 break;
             case AssetType.gif:
-                await client.SendAnimation(
-                    message.Chat.Id,
-                    InputFile.FromString(asset.Source),
-                    disableNotification: true
-                );
+                await client.SendAnimation(message.Chat.Id, InputFile.FromString(asset.Source), disableNotification: true);
                 break;
             case AssetType.sticker:
-                await client.SendSticker(
-                    message.Chat.Id,
-                    InputFile.FromString(asset.Source),
-                    disableNotification: true
-                );
+                await client.SendSticker(message.Chat.Id, InputFile.FromString(asset.Source), disableNotification: true);
                 break;
         }
     }

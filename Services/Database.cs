@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PodereBot.Lib.Common;
 

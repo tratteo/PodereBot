@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using PodereBot.Services;
 using Telegram.Bot;
