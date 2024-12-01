@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Humanizer;
 using PodereBot.Services;
@@ -37,7 +38,7 @@ internal class TemperaturesCommand(
             msg.AppendLine($"Host: {tempString}");
             foreach (var r in externalReadings)
             {
-                tempString = $"<b>{r.Temperature:F2}° ({r.Timestamp.Humanize()})</b>".PadLeft(40);
+                tempString = $"<b>{r.Temperature:F2}° ({r.Timestamp.Humanize(culture: new CultureInfo("it-IT"))})</b>".PadLeft(40);
                 msg.AppendLine($"{r.Location.Trim()}: {tempString}");
             }
             return msg.ToString();
