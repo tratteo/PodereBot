@@ -26,7 +26,7 @@ internal class OneWireEmbeddedTemperatureDriver(ILogger<OneWireEmbeddedTemperatu
         string? match = dirs.FirstOrDefault(d => Regex.IsMatch(d, @"28-.*$", RegexOptions.IgnoreCase));
         if (match == null)
         {
-            logger.LogTrace("no one wire sensors found");
+            logger.LogWarning("no one wire sensors found");
             return null;
         }
         var source = await File.ReadAllTextAsync(Path.Join(match, "w1_slave"));
