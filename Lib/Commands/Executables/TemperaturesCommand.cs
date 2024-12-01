@@ -25,36 +25,44 @@ internal class TemperaturesCommand(
         return Task.CompletedTask;
     }
 
-    private async Task<string> GetHtmlStatusMessage()
+    private async Task<string> GetHtmlStatusMessage(bool computeTemperatures)
     {
         var msg = new StringBuilder();
-        var temp = await temperatureDriver.GetLocalTemperature();
-        var externalReadings = temperatureDriver.GetExternalTemperatureReadings();
-        msg.AppendLine($"🌡️ Temperature");
-        var tempString = $"<b>{(temp != null ? $"{temp:F2}°" : "non disponibile 😵")}</b>".PadLeft(40);
-        msg.AppendLine($"Host: {tempString}");
-        foreach (var r in externalReadings)
+        if (computeTemperatures)
         {
-            tempString = $"<b>{r.Temperature:F2}° ({r.Timestamp.Humanize()})</b>".PadLeft(40);
-            msg.AppendLine($"{r.Location.Trim()}: {tempString}");
+            var temp = await temperatureDriver.GetLocalTemperature();
+            var externalReadings = temperatureDriver.GetExternalTemperatureReadings();
+            msg.AppendLine($"🌡️ Temperature");
+            var tempString = $"<b>{(temp != null ? $"{temp:F2}°" : "non disponibile 😵")}</b>".PadLeft(40);
+            msg.AppendLine($"Host: {tempString}");
+            foreach (var r in externalReadings)
+            {
+                tempString = $"<b>{r.Temperature:F2}° ({r.Timestamp.Humanize()})</b>".PadLeft(40);
+                msg.AppendLine($"{r.Location.Trim()}: {tempString}");
+            }
+            return msg.ToString();
         }
-        return msg.ToString();
+        else
+        {
+            return $"🌡️ Sto calcolando le temperature...";
+        }
     }
 
     protected override async Task ExecuteInternal()
     {
         AttachEvents();
         await Arguments.Client.SendChatAction(Arguments.Message.Chat.Id, ChatAction.Typing);
-        var msg = await GetHtmlStatusMessage();
+        var msg = await GetHtmlStatusMessage(false);
         kbd.AddButton("Chiudi", EncodeCallbackQueryData("cancel"));
         var message = await Arguments
             .Client.SendMessage(Arguments.Message.Chat.Id, msg, replyMarkup: kbd, parseMode: ParseMode.Html, disableNotification: true)
             .DeleteOnDetach(this);
-        refreshTimer.Elapsed += (_, _) => UpdateStatusMessage(message);
+        await UpdateStatusMessage(message);
+        refreshTimer.Elapsed += (_, _) => _ = UpdateStatusMessage(message);
         refreshTimer.Start();
     }
 
-    private async void UpdateStatusMessage(Message? message)
+    private async Task UpdateStatusMessage(Message? message)
     {
         if (message == null)
             return;
@@ -64,7 +72,7 @@ internal class TemperaturesCommand(
             await Arguments.Client.EditMessageText(
                 message.Chat.Id,
                 message.Id,
-                await GetHtmlStatusMessage(),
+                await GetHtmlStatusMessage(true),
                 replyMarkup: kbd,
                 parseMode: ParseMode.Html
             );
