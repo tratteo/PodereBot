@@ -50,6 +50,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+Thread.CurrentThread.CurrentCulture = new CultureInfo("it-IT");
 var loggerProvider = app.Services.GetRequiredService<ILoggerFactory>();
 var logger = loggerProvider.CreateLogger(string.Empty);
 logger.LogInformation("env: [{env}]", app.Services.GetService<IHostEnvironment>()?.EnvironmentName);
