@@ -77,10 +77,10 @@ internal abstract class AbstractOpenGateCommand(
                 $"Ho aperto il cancello {GateName} 🐱",
                 disableNotification: true
             );
-            if (!adminIds.Contains(Arguments.Message.From!.Id))
+            if (Arguments.Message.From != null && !adminIds.Contains(Arguments.Message.From.Id))
             {
                 await Arguments.Client.NotifyOwners(
-                    $"🔑 <b>{Arguments.Message.From.Username}</b> ha aperto il cancello {GateName}",
+                    $"🔑 <b>{Arguments.Message.From.FirstName} {Arguments.Message.From.LastName}</b> ha aperto il cancello {GateName}",
                     logger
                 );
             }

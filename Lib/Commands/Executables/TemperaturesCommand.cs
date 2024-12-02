@@ -26,6 +26,13 @@ internal class TemperaturesCommand(
         return Task.CompletedTask;
     }
 
+    private string GetTemperatureString(string name, float? temperature, DateTime? timestamp = null)
+    {
+        var tempStr =
+            $"<b>{(temperature != null ? $"{temperature:F2}°" : "non disponibile 😵")} {(timestamp != null ? $"({timestamp.Humanize(culture: new CultureInfo("it-IT"))})" : "")}</b>";
+        return string.Format("{0} {1}", name, tempStr.PadLeft(40));
+    }
+
     private async Task<string> GetHtmlStatusMessage(bool computeTemperatures)
     {
         var msg = new StringBuilder();
@@ -34,12 +41,10 @@ internal class TemperaturesCommand(
             var temp = await temperatureDriver.GetLocalTemperature();
             var externalReadings = temperatureDriver.GetExternalTemperatureReadings();
             msg.AppendLine($"🌡️ Temperature");
-            var tempString = $"<b>{(temp != null ? $"{temp:F2}°" : "non disponibile 😵")}</b>".PadLeft(40);
-            msg.AppendLine($"Host: {tempString}");
+            msg.AppendLine(GetTemperatureString("Host", temp));
             foreach (var r in externalReadings)
             {
-                tempString = $"<b>{r.Temperature:F2}° ({r.Timestamp.Humanize(culture: new CultureInfo("it-IT"))})</b>".PadLeft(40);
-                msg.AppendLine($"{r.Location.Trim()}: {tempString}");
+                msg.AppendLine(GetTemperatureString(r.Location, r.Temperature, r.Timestamp));
             }
             return msg.ToString();
         }
@@ -81,11 +86,13 @@ internal class TemperaturesCommand(
         catch (Exception) { }
     }
 
-    protected override async Task OnCallback(Update update, string callbackData)
+    protected override async Task OnMessage(Message message, UpdateType type)
     {
-        if (callbackData == "cancel")
-        {
-            await DetachEvents();
-        }
+        await DetachEvents();
+    }
+
+    protected override async Task OnUpdate(Update update)
+    {
+        await DetachEvents();
     }
 }

@@ -62,7 +62,8 @@ internal class ManageGatesCommand(ILogger<ManageGatesCommand> logger, Database d
             database.Edit((data) => data.GatesOpenAccessExpirationDate = date);
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"I cancelli sono sbloccati fino al {date} 🙀",
+                $"I cancelli sono sbloccati fino al <b>{date} 🙀</b>",
+                parseMode: ParseMode.Html,
                 disableNotification: true
             );
         }
