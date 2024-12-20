@@ -1,5 +1,13 @@
 #!/bin/bash
 
+confirm() {
+    read -p "$1 (y/n) [n]: " answer
+    case $answer in
+        [Yy]* ) return 0;;
+        * ) return 1;;
+    esac
+}
+
 error_handler() {
     echo "error occurred at line $1"
     exit 1
@@ -7,7 +15,7 @@ error_handler() {
 
 if [ "$#" -eq 0 ]; then
   echo "no user provided"
-  echo "sudo ./install.sh <user> <no-service (skip service generation)>"
+  echo "sudo ./install.sh <user>"
   exit 1
 fi
 user="$1"
@@ -45,42 +53,61 @@ echo - patching build
 dotnet build /p:OutputPath=build
 
 # ===== SYSTEMD SERVICE SETUP
-if ! [ "$2" = "no-service" ]; then
+if confirm "setup systemd services?"; then
   echo - writing .service file
   service="[Unit]
-  Description=Telegram Podere bot
-  After=network-online.target
-  Wants=network-online.target
+Description=Telegram Podere bot
+After=network-online.target
+Wants=network-online.target
 
-  [Service]
-  Type=simple
-  ExecStart=/home/$user/PodereBot/run.sh
+[Service]
+Type=simple
+ExecStart=/home/$user/PodereBot/run.sh
 
-  [Install]
-  WantedBy=multi-user.target"
+[Install]
+WantedBy=multi-user.target"
   echo -e "$service" > /etc/systemd/system/poderebot.service
 
-  echo - writing watchdog .service file
+  echo - writing watchdog .service files
   service="[Unit]
-  Description=Telegram Podere bot watchdog system
-  After=poderebot.service
-  Wants=network-online.target
+Description=Telegram Podere bot watchdog service
+After=poderebot.service
+Wants=network-online.target
 
-  [Service]
-  Type=simple
-  Restart=always
-  RuntimeMaxSec=1m
-  TimeoutStartSec=1m
-  ExecStart=/bin/sh -c 'curl -m 5 -f http://localhost:5050/api/status || systemctl restart poderebot.service'
+[Service]
+Type=simple
+ExecStart=/bin/sh -c 'curl -m 5 -f http://localhost:5050/api/status || systemctl restart poderebot.service'
 
-  [Install]
-  WantedBy=multi-user.target"
+[Install]
+WantedBy=multi-user.target"
   echo -e "$service" > /etc/systemd/system/poderebot-wd.service
+
+  service="[Unit]
+Description=Telegram Podere bot watchdog timer
+
+[Timer]
+OnBootSec=1m
+OnUnitActiveSec=10m
+AccuracySec=1s 
+
+[Install]
+WantedBy=timers.target"
+  echo -e "$service" > /etc/systemd/system/poderebot-wd.timer
+
+  echo - reloading daemon
+  sudo systemctl daemon-reload
+  echo - enabling services
+  sudo systemctl enable poderebot.service
+  sudo systemctl enable poderebot-wd.service
+  sudo systemctl enable poderebot-wd.timer
+
+  if confirm "start systemd services?"; then
+    echo - restarting services
+    sudo systemctl restart poderebot.service
+    sudo systemctl restart poderebot-wd.service
+    sudo systemctl restart poderebot-wd.timer
+  fi
+
 fi
 
-echo - reloading daemon
-sudo systemctl daemon-reload
-echo - enabling service
-sudo systemctl enable poderebot.service
-sudo systemctl enable poderebot-wd.service
 echo - installation completed
