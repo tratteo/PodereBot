@@ -59,10 +59,28 @@ if ! [ "$2" = "no-service" ]; then
   [Install]
   WantedBy=multi-user.target"
   echo -e "$service" > /etc/systemd/system/poderebot.service
+
+  echo - writing watchdog .service file
+  service="[Unit]
+  Description=Telegram Podere bot watchdog system
+  After=poderebot.service
+  Wants=network-online.target
+
+  [Service]
+  Type=simple
+  Restart=always
+  RuntimeMaxSec=1m
+  TimeoutStartSec=1m
+  ExecStart=/bin/sh -c 'curl -m 5 -f http://localhost:5050/api/status || systemctl restart poderebot.service'
+
+  [Install]
+  WantedBy=multi-user.target"
+  echo -e "$service" > /etc/systemd/system/poderebot-wd.service
 fi
 
 echo - reloading daemon
 sudo systemctl daemon-reload
 echo - enabling service
 sudo systemctl enable poderebot.service
+sudo systemctl enable poderebot-wd.service
 echo - installation completed
