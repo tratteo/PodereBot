@@ -27,7 +27,7 @@ internal class HeatingProgramDaemon(
             try
             {
                 // If there is no program, quit
-                if (db.Data.HeatingProgram == null)
+                if (db.Data.HeatingProgram == null || db.Data.HeatingProgram.IsSuspended)
                     continue;
 
                 // If temperature is not available, quit

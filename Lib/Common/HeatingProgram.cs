@@ -4,6 +4,7 @@ namespace PodereBot.Lib.Common;
 
 public class HeatingProgram()
 {
+    public bool IsSuspended { get; set; } = false;
     public List<HeatingInterval> Intervals { get; private set; } = [];
 
     private HeatingProgram(IEnumerable<HeatingInterval> intervals)

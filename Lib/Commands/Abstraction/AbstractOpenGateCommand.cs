@@ -1,3 +1,4 @@
+using System.Text;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -51,10 +52,23 @@ internal abstract class AbstractOpenGateCommand(
     private async Task OpenProcedure()
     {
         AttachEvents();
+        var msg = new StringBuilder();
+        if (!adminIds.Contains(Arguments.Message.From!.Id))
+        {
+            msg.AppendLine(
+                $"""
+                ⚠️ Conferma solo se sei di fronte al cancello!
+                😠 Non trollate, mi scappano i cani e muoiono spiaccicati in strada! 
+
+                """
+            );
+        }
+        msg.AppendLine($"Confermi di voler aprire il cancello {GateName}?");
         await Arguments
             .Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"Confermi di voler aprire il cancello {GateName}?",
+                msg.ToString(),
+                parseMode: ParseMode.Html,
                 replyMarkup: new InlineKeyboardMarkup()
                     .AddButton("✅", EncodeCallbackQueryData("y"))
                     .AddButton("❌", EncodeCallbackQueryData("n")),
@@ -79,10 +93,12 @@ internal abstract class AbstractOpenGateCommand(
             );
             if (Arguments.Message.From != null && !adminIds.Contains(Arguments.Message.From.Id))
             {
-                await Arguments.Client.NotifyOwners(
-                    $"🔑 <b>{Arguments.Message.From.FirstName} {Arguments.Message.From.LastName}</b> ha aperto il cancello {GateName}",
-                    logger
-                );
+                var name = Arguments.Message.From.FirstName;
+                if (!string.IsNullOrEmpty(Arguments.Message.From.LastName))
+                {
+                    name += $" {Arguments.Message.From.LastName}";
+                }
+                await Arguments.Client.NotifyOwners($"🔑 <b>{name}</b> ha aperto il cancello {GateName}", logger);
             }
         }
 

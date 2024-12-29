@@ -19,7 +19,7 @@ internal class HeatingCommand(
     Database db
 ) : Command(skin, logger, configuration)
 {
-    private readonly System.Timers.Timer refreshTimer = new(TimeSpan.FromSeconds(5));
+    private readonly System.Timers.Timer refreshTimer = new(TimeSpan.FromSeconds(10));
 
     protected override Task OnDetach()
     {
@@ -31,15 +31,29 @@ internal class HeatingCommand(
     {
         var kbd = new InlineKeyboardMarkup();
         var interval = db.Data.HeatingProgram?.GetCurrentInterval();
-        if (interval == null)
+        if (interval == null || db.Data.HeatingProgram?.IsSuspended == true)
         {
-            kbd.AddButton("🔥 Accendi", EncodeCallbackQueryData("on"));
-            kbd.AddButton("❄️ Spegni", EncodeCallbackQueryData("off"));
+            if (heatingDriver.IsBoilerActive())
+            {
+                kbd.AddButton("❄️ Spegni", EncodeCallbackQueryData("off"));
+            }
+            else
+            {
+                kbd.AddButton("🔥 Accendi", EncodeCallbackQueryData("on"));
+            }
             kbd.AddNewRow();
         }
         if (db.Data.HeatingProgram != null)
         {
-            kbd.AddButton("Rimuovi programma", EncodeCallbackQueryData("delete")).AddNewRow();
+            kbd.AddButton("Rimuovi programma", EncodeCallbackQueryData("delete"));
+            if (db.Data.HeatingProgram.IsSuspended)
+            {
+                kbd.AddButton("Riprendi programma", EncodeCallbackQueryData("suspend")).AddNewRow();
+            }
+            else
+            {
+                kbd.AddButton("Sospendi programma", EncodeCallbackQueryData("suspend")).AddNewRow();
+            }
         }
         kbd.AddButton("Chiudi", EncodeCallbackQueryData("cancel"));
         return kbd;
@@ -61,14 +75,14 @@ internal class HeatingCommand(
                 html.AppendLine($"<b>🥶 Riscaldamento spento</b>");
             }
             var nextInterval = db.Data.HeatingProgram?.GetNextInterval();
-            if (nextInterval != null)
+            if (nextInterval != null && db.Data.HeatingProgram?.IsSuspended == false)
             {
                 html.AppendLine(
                     $"🕓 Dalle <b>{nextInterval.HoursFrom:D2}:{nextInterval.MinutesFrom:D2}</b> è programmato a <b>{nextInterval!.Temperature}°</b>"
                 );
             }
         }
-        else
+        else if (db.Data.HeatingProgram?.IsSuspended == false)
         {
             html.AppendLine(
                 $"🕓 Riscaldamento programmato a <b>{interval!.Temperature}°</b> fino alle <b>{interval.HoursTo:D2}:{interval.MinutesTo:D2}</b>"
@@ -96,8 +110,14 @@ internal class HeatingCommand(
         var html = GetHtmlStatusMessage($"🌡️ Sto calcolando la temperatura...");
         html.AppendLine();
         html.AppendLine();
+
         if (db.Data.HeatingProgram != null)
         {
+            if (db.Data.HeatingProgram.IsSuspended)
+            {
+                html.AppendLine("<b>⏸ Programmazione sospesa</b>");
+            }
+
             html.AppendLine(
                 $"""
                 La pianificazione attuale: 
@@ -153,10 +173,10 @@ internal class HeatingCommand(
 
     protected override async Task OnCallback(Update update, string callbackData)
     {
+        var currentInterval = db.Data.HeatingProgram?.GetCurrentInterval();
         var nextInterval = db.Data.HeatingProgram?.GetNextInterval();
         if (callbackData == "delete")
         {
-            var currentInterval = db.Data.HeatingProgram?.GetCurrentInterval();
             db.Edit(d =>
             {
                 d.HeatingProgram = null;
@@ -172,10 +192,7 @@ internal class HeatingCommand(
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
                 $"""
-                <b>Ho spento il riscaldamento ❄️</b>
-
-                Le modifiche verrano mantenute fino alla prossima programmazione.
-                <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
+                <b>❄️ Ho spento il riscaldamento </b>
                 """,
                 parseMode: ParseMode.Html,
                 disableNotification: true
@@ -188,14 +205,41 @@ internal class HeatingCommand(
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
                 $"""
-                <b>Ho acceso il riscaldamento 🔥</b>
-
-                Le modifiche verrano mantenute fino alla prossima programmazione.
-                <blockquote>{(nextInterval != null ? $"{nextInterval}" : "")}</blockquote>
+                <b>🔥 Ho acceso il riscaldamento </b>
                 """,
                 parseMode: ParseMode.Html,
                 disableNotification: true
             );
+        }
+        else if (callbackData == "suspend")
+        {
+            if (db.Data.HeatingProgram == null)
+                return;
+            db.Edit(d => d.HeatingProgram!.IsSuspended = !d.HeatingProgram.IsSuspended);
+            if (db.Data.HeatingProgram.IsSuspended)
+            {
+                heatingDriver.SwitchHeating(false);
+                await Arguments.Client.SendMessage(
+                    Arguments.Message.Chat.Id,
+                    $"""
+                    <b> ⏸ Ho sospeso la programmazione.</b>
+                    Il riscaldamento può essere controllato manualmente
+                    """,
+                    parseMode: ParseMode.Html,
+                    disableNotification: true
+                );
+            }
+            else
+            {
+                await Arguments.Client.SendMessage(
+                    Arguments.Message.Chat.Id,
+                    $"""
+                    <b> ▶ Ho riattivato la programmazione.</b>
+                    """,
+                    parseMode: ParseMode.Html,
+                    disableNotification: true
+                );
+            }
         }
         await DetachEvents();
     }
