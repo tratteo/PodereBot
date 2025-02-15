@@ -1,10 +1,13 @@
+using PodereBot.Lib;
 using PodereBot.Services;
+using PodereBot.Services.Hosted;
 
 internal class HeatingDriver(
     ILogger<HeatingDriver> logger,
     IPinDriver pinDriver,
     IConfiguration configuration,
     ITemperatureDriver temperatureReader,
+    BotHostedService bot,
     Database db
 )
 {
@@ -28,6 +31,8 @@ internal class HeatingDriver(
         var localTemperature = await temperatureReader.GetLocalTemperature(cancellationToken);
         if (localTemperature != null)
             temperatures.Add((float)localTemperature);
+        else
+            _ = bot.Client.NotifyOwners("⚠️ Temperatura host non disponibile!");
         if (temperatures.Count > 0)
         {
             logger.LogDebug(

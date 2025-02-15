@@ -12,7 +12,7 @@ internal class BotHostedService : IHostedService
     private readonly ILogger logger;
     private readonly IServiceProvider services;
     private readonly CancellationTokenSource cancellationToken = new();
-    private readonly TelegramBotClient client;
+    public TelegramBotClient Client { get; init; }
     private readonly Skin skin;
     private readonly List<CommandRegistryKey> commandEntries;
 
@@ -21,29 +21,29 @@ internal class BotHostedService : IHostedService
         this.skin = skin;
         this.logger = logger;
         this.services = services;
-        client = new TelegramBotClient(configuration.GetValue<string>("TELEGRAM_API_KEY")!, cancellationToken: cancellationToken.Token);
+        Client = new TelegramBotClient(configuration.GetValue<string>("TELEGRAM_API_KEY")!, cancellationToken: cancellationToken.Token);
         commandEntries = Assembly.GetExecutingAssembly().GetCommands();
         logger.LogInformation("registered {c} commands", commandEntries.Count);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var me = await client.GetMe(cancellationToken: cancellationToken);
+        var me = await Client.GetMe(cancellationToken: cancellationToken);
 
-        await client.SetMyDescription($"Che vuoi?", cancellationToken: cancellationToken);
-        await client.SetMyShortDescription($"Che vuoi?", cancellationToken: cancellationToken);
-        await client.SetMyCommands(
+        await Client.SetMyDescription($"Che vuoi?", cancellationToken: cancellationToken);
+        await Client.SetMyShortDescription($"Che vuoi?", cancellationToken: cancellationToken);
+        await Client.SetMyCommands(
             commandEntries.ConvertAll(c => new BotCommand() { Command = c.metadata.Key, Description = c.metadata.Description }),
             cancellationToken: cancellationToken
         );
-        await client.NotifyOwners("Presente 😼", logger);
-        client.OnMessage += OnMessage;
+        await Client.NotifyOwners("Presente 😼", logger);
+        Client.OnMessage += OnMessage;
         logger.LogInformation("@{u} is running", me.Username);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        await client.NotifyOwners("Torno a dormire 🌙", logger);
+        await Client.NotifyOwners("Torno a dormire 🌙", logger);
         this.cancellationToken.Cancel();
         await Task.CompletedTask;
     }
@@ -71,7 +71,7 @@ internal class BotHostedService : IHostedService
                 await cmdService.Execute(
                     new CommandArguments()
                     {
-                        Client = client,
+                        Client = Client,
                         Message = msg,
                         Admin = match.metadata.Admin
                     }
@@ -87,7 +87,7 @@ internal class BotHostedService : IHostedService
             var responder = services.GetService<ConversationalResponder>();
             if (responder == null)
                 return;
-            var _ = responder.Process(client, msg);
+            var _ = responder.Process(Client, msg);
         }
     }
 }

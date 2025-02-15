@@ -6,7 +6,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace PodereBot.Lib.Commands;
 
-[CommandMetadata(Key = "/setskin", Description = "Cambia la mia skin 🎨")]
+//[CommandMetadata(Key = "/setskin", Description = "Cambia la mia skin 🎨")]
 internal class SetSkinCommand(ILogger<SetSkinCommand> logger, Skin skin, IConfiguration configuration)
     : Command(skin, logger, configuration)
 {
