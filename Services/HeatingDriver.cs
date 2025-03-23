@@ -15,6 +15,7 @@ internal class HeatingDriver(
     private readonly IPinDriver pinDriver = pinDriver;
     private readonly ITemperatureDriver temperatureReader = temperatureReader;
     private readonly int heatingPin = configuration.GetValue<int>("Pins:Heating");
+    private bool temperatureUnavailableNotified = false;
     private readonly TimeSpan readingsTimespan = TimeSpan.FromSeconds(
         configuration.GetValue<int?>("Heating:TempSensorsToleranceSeconds") ?? 60
     );
@@ -30,9 +31,19 @@ internal class HeatingDriver(
         var temperatures = readings.ConvertAll(r => r.Temperature);
         var localTemperature = await temperatureReader.GetLocalTemperature(cancellationToken);
         if (localTemperature != null)
+        {
+            if (temperatureUnavailableNotified)
+            {
+                _ = bot.Client.NotifyOwners("✅ Temperatura host tornata disponbile!");
+                temperatureUnavailableNotified = false;
+            }
             temperatures.Add((float)localTemperature);
-        else
+        }
+        else if (!temperatureUnavailableNotified)
+        {
             _ = bot.Client.NotifyOwners("⚠️ Temperatura host non disponibile!");
+            temperatureUnavailableNotified = true;
+        }
         if (temperatures.Count > 0)
         {
             logger.LogDebug(
