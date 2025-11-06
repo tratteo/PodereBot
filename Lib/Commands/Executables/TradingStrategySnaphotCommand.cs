@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.OpenApi.Extensions;
 using Newtonsoft.Json;
 using PodereBot.Services;
 using Telegram.Bot;
@@ -7,7 +8,7 @@ using Telegram.Bot.Types.Enums;
 namespace PodereBot.Lib.Commands;
 
 [CommandMetadata(Key = "/stratsnp", Description = "Ti mando lo snapshot della strategia di trading corrente")]
-internal class TradingStrategySnapshot(Skin skin, ILogger<StartCommand> logger, IConfiguration configuration, CryptoAlertDaemon alertDaemon) : Command(skin, logger, configuration)
+internal class TradingStrategySnapshotCommand(Skin skin, ILogger<StartCommand> logger, IConfiguration configuration, CryptoAlertDaemon alertDaemon) : Command(skin, logger, configuration)
 {
     protected override async Task ExecuteInternal()
     {
@@ -16,8 +17,8 @@ internal class TradingStrategySnapshot(Skin skin, ILogger<StartCommand> logger, 
             <b>🔎 Snapshot Strategia</b>
 
             Strategy: <b>AtrStochRsiEmaStrategy</b>
-            Timeframe: <b>1m</b>
-            Pair: <b>SOL/USDT</b>
+            Timeframe: <b>{alertDaemon.Interval.GetDisplayName()}</b>
+            Pair: <b>{alertDaemon.Pair}</b>
 
             <b>Last Kline</b>
             <pre language='json'>{JsonConvert.SerializeObject(alertDaemon.LastKline, Formatting.Indented)}</pre>

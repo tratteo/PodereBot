@@ -16,8 +16,8 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
     readonly BinanceSocketClient client = new();
     private readonly AbstractStrategy strategy = new AtrStochRsiEmaStrategy(new StrategyConstructorParameters([], logger));
     private UpdateSubscription? subscription;
-    private readonly KlineInterval interval = KlineInterval.FiveMinutes;
-    private readonly string pair = "SOLUSDT";
+    public KlineInterval Interval { get; init; } = KlineInterval.FiveMinutes;
+    public string Pair { get; init; } = "SOLUSDT";
     public SharedKline? LastKline { get; private set; }
 
     private async void OnKlineUpdate(DataEvent<IBinanceStreamKlineData> kline)
@@ -54,11 +54,11 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
 
     async Task IHostedService.StartAsync(CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow.AddSeconds(-(int)interval);
-        var start = now.AddSeconds(-(int)interval * 50);
+        var now = DateTime.UtcNow.AddSeconds(-(int)Interval);
+        var start = now.AddSeconds(-(int)Interval * 50);
         //await Task.Delay(5000, cancellationToken);
 
-        var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(pair, interval, startTime: start, endTime: now, ct: cancellationToken);
+        var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(Pair, Interval, startTime: start, endTime: now, ct: cancellationToken);
         if (!preload.Success)
         {
             logger.LogWarning("unable to preload to klines, error: {t}, code: {c}, mesage: {m}, description: {d}, ex: {e}", preload.Error?.ErrorType, preload.Error?.ErrorCode, preload.Error?.Message, preload.Error?.ErrorDescription, preload.Error?.Exception);
@@ -74,7 +74,7 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
             logger.LogInformation("preloaded strategy with {l} klines, last: {l}", preload.Data.Result.Length, LastKline);
         }
 
-        var sub = await client.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(pair, interval, OnKlineUpdate, ct: cancellationToken);
+        var sub = await client.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(Pair, Interval, OnKlineUpdate, ct: cancellationToken);
         if (!sub.Success)
         {
             logger.LogWarning("unable to subscribe to kline websocket");
