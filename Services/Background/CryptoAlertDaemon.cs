@@ -1,7 +1,9 @@
 using System.Text;
+using System.Text.Json;
 using Binance.Net.Clients;
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
+using CryptoExchange.Net.Objects;
 using CryptoExchange.Net.Objects.Sockets;
 using CryptoExchange.Net.SharedApis;
 using PodereBot.Lib;
@@ -55,11 +57,11 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
     {
         var now = DateTime.UtcNow.AddSeconds(-(int)interval);
         var start = now.AddSeconds(-(int)interval * 50);
+        await Task.Delay(5000, cancellationToken);
         var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(pair, interval, startTime: start, endTime: now, ct: cancellationToken);
         if (!preload.Success)
         {
-
-            logger.LogWarning("unable to preload to klines,type: {t}, code: {c}, message: {m}, description: {d}", preload.Error?.ErrorType, preload.Error?.ErrorCode, preload.Error?.Message, preload.Error?.ErrorDescription);
+            logger.LogWarning("unable to preload to klines, error: {t}", JsonSerializer.Serialize(preload.Error));
         }
         else
         {
