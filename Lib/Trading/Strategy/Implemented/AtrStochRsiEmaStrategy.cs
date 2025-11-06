@@ -23,14 +23,14 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
     public AtrStochRsiEmaStrategy(StrategyConstructorParameters parameters) :
         base(parameters)
     {
-        riskRewardRatio = parameters.Parameters.GetValueOrDefault("riskRewardRatio", 1F);
+        riskRewardRatio = parameters.Parameters.GetValueOrDefault("riskRewardRatio", 4F);
         atrFactor = parameters.Parameters.GetValueOrDefault("atrFactor", 1F);
         intervalTolerance = (int)parameters.Parameters.GetValueOrDefault("intervalTolerance", 2);
         atr = new Atr();
-        ema1 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema1Period", 15));
-        ema2 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema2Period", 50));
-        ema3 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema3Period", 125));
-        lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 30);
+        ema1 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema1Period", 8));
+        ema2 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema2Period", 14));
+        ema3 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema3Period", 50));
+        lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 20);
         highStochRsi = (int)parameters.Parameters.GetValueOrDefault("highStochRsi", 70);
         stochRsi = new StochRsi();
         InjectConditions();
@@ -85,13 +85,13 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
                 ema3.Last < ema2.Last && ema2.Last < ema1.Last && ema1.Last < (float)f.ClosePrice),
             new EventCondition(f =>
             {
-                var stoch = stochRsi.Last;
-                return stoch is not (null, null) && lastStochK is not null && lastStochD is not null &&
-                lastStochK < lastStochD && stoch.Item1 > stoch.Item2 && stoch.Item2 < lowStochRsi;
+                var (stochK, stochD) = stochRsi.Last;
+                return stochRsi.Last is not (null, null) && lastStochK is not null && lastStochD is not null &&
+                lastStochK < lastStochD && stochK > stochD && stochD < lowStochRsi;
             }, f =>
             {
-                var stoch = stochRsi.Last;
-                return stoch.Item1 < stoch.Item2 || stoch.Item2 > lowStochRsi;
+                var (stochK, stochD) = stochRsi.Last;
+                return stochK < stochD || stochD > lowStochRsi;
             }, intervalTolerance));
 
         InjectShortConditions(
@@ -100,13 +100,13 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
                 ema3.Last > ema2.Last && ema2.Last > ema1.Last && ema1.Last > (float)f.ClosePrice),
             new EventCondition(f =>
             {
-                var stoch = stochRsi.Last;
-                return stoch is not (null, null) && lastStochK is not null && lastStochD is not null &&
-                lastStochK > lastStochD && stoch.Item1 < stoch.Item2 && stoch.Item2 > highStochRsi;
+                var (stochK, stochD) = stochRsi.Last;
+                return stochRsi.Last is not (null, null) && lastStochK is not null && lastStochD is not null &&
+                lastStochK > lastStochD && stochK < stochD && stochD > highStochRsi;
             }, f =>
             {
-                var stoch = stochRsi.Last;
-                return stoch.Item1 > stoch.Item2 || stoch.Item2 < highStochRsi;
+                var (stochK, stochD) = stochRsi.Last;
+                return stochK > stochD || stochD < highStochRsi;
             }, intervalTolerance));
     }
 }
