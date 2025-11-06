@@ -1,7 +1,5 @@
 ﻿using CryptoExchange.Net.SharedApis;
-using Microsoft.Extensions.Logging;
 using PodereBot.Lib.Trading.Indicators;
-using PodereBot.Lib.Trading.Strategy;
 
 namespace PodereBot.Lib.Trading.Strategy.Implemented;
 
@@ -79,6 +77,7 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
 
     private void InjectConditions()
     {
+
         InjectLongConditions(
             new PerpetualCondition(f =>
                 ema1.Last is not null && ema2.Last is not null && ema3.Last is not null &&

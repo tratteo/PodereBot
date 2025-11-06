@@ -1,7 +1,5 @@
-using PodereBot.Lib;
 using PodereBot.Lib.Common;
 using PodereBot.Services;
-using PodereBot.Services.Hosted;
 
 internal class HeatingProgramDaemon(
     ILogger<HeatingProgramDaemon> logger,

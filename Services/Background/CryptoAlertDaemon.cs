@@ -9,22 +9,21 @@ using PodereBot.Lib.Trading.Strategy;
 using PodereBot.Lib.Trading.Strategy.Implemented;
 using PodereBot.Services.Hosted;
 
-internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedService bot) : BackgroundService
+internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedService bot) : IHostedService
 {
 
     readonly BinanceSocketClient client = new();
     private readonly AbstractStrategy strategy = new AtrStochRsiEmaStrategy(new StrategyConstructorParameters([], logger));
-
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        return client.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync("SOLUSDT", KlineInterval.OneMinute, OnKlineUpdate, ct: stoppingToken);
-    }
+    private UpdateSubscription? subscription;
+    private readonly KlineInterval interval = KlineInterval.FiveMinutes;
+    private readonly string pair = "SOLUSDT";
+    public SharedKline? LastKline { get; private set; }
 
     private async void OnKlineUpdate(DataEvent<IBinanceStreamKlineData> kline)
     {
-        logger.LogDebug("kline received, timestamp: {t}", kline.ReceiveTime);
         if (!kline.Data.Data.Final) return;
         var sharedKline = new SharedKline(kline.Data.Data.OpenTime, kline.Data.Data.ClosePrice, kline.Data.Data.HighPrice, kline.Data.Data.LowPrice, kline.Data.Data.OpenPrice, kline.Data.Data.Volume);
+        LastKline = sharedKline;
         var reports = await strategy.UpdateState(sharedKline);
         if (reports.Count > 0)
         {
@@ -52,4 +51,45 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
         }
     }
 
+    async Task IHostedService.StartAsync(CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow.AddSeconds(-(int)interval);
+        var start = now.AddSeconds(-(int)interval * 50);
+        var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(pair, interval, startTime: start, endTime: now, ct: cancellationToken);
+        if (!preload.Success)
+        {
+            logger.LogWarning("unable to preload to klines");
+        }
+        else
+        {
+            foreach (var kline in preload.Data.Result)
+            {
+                _ = await strategy.UpdateState(new SharedKline(kline.OpenTime, kline.ClosePrice, kline.HighPrice, kline.LowPrice, kline.OpenPrice, kline.Volume));
+            }
+            var last = preload.Data.Result.Last();
+            LastKline = new SharedKline(last.OpenTime, last.ClosePrice, last.HighPrice, last.LowPrice, last.OpenPrice, last.Volume);
+            logger.LogInformation("preloaded strategy with {l} klines, last: {l}", preload.Data.Result.Length, LastKline);
+        }
+
+        var sub = await client.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(pair, interval, OnKlineUpdate, ct: cancellationToken);
+        if (!sub.Success)
+        {
+            logger.LogWarning("unable to subscribe to kline websocket");
+        }
+        else
+        {
+            subscription = sub.Data;
+        }
+
+    }
+
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (subscription != null)
+        {
+            return client.SpotApi.UnsubscribeAsync(subscription.Id);
+        }
+        return Task.CompletedTask;
+    }
 }

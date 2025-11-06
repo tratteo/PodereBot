@@ -39,8 +39,12 @@ builder.Services.AddSingleton<Skin>();
 builder.Services.AddSingleton<HeatingDriver>();
 builder.Services.AddTransient<ConversationalResponder>();
 builder.Services.AddSingleton<Database>();
+
 builder.Services.AddHostedService<HeatingProgramDaemon>();
-builder.Services.AddHostedService<CryptoAlertDaemon>();
+
+builder.Services.AddSingleton<CryptoAlertDaemon>();
+builder.Services.AddHostedService(p => p.GetRequiredService<CryptoAlertDaemon>());
+
 builder.Services.AddSingleton<BotHostedService>();
 builder.Services.AddHostedService(p => p.GetRequiredService<BotHostedService>());
 

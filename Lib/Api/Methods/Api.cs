@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using Humanizer;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace PodereBot.Lib.Api;
