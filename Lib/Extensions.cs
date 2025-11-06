@@ -10,6 +10,7 @@ namespace PodereBot.Lib;
 
 public static class Extensions
 {
+
     public static bool IsLocal(this HttpRequest req)
     {
         var connection = req.HttpContext.Connection;

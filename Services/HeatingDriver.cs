@@ -11,9 +11,7 @@ internal class HeatingDriver(
     Database db
 )
 {
-    private readonly ILogger<HeatingDriver> logger = logger;
-    private readonly IPinDriver pinDriver = pinDriver;
-    private readonly ITemperatureDriver temperatureReader = temperatureReader;
+
     private readonly int heatingPin = configuration.GetValue<int>("Pins:Heating");
     private bool temperatureUnavailableNotified = false;
     private readonly TimeSpan readingsTimespan = TimeSpan.FromSeconds(
