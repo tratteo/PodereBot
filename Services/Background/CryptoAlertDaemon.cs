@@ -56,7 +56,8 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
     {
         var now = DateTime.UtcNow.AddSeconds(-(int)interval);
         var start = now.AddSeconds(-(int)interval * 50);
-        await Task.Delay(5000, cancellationToken);
+        //await Task.Delay(5000, cancellationToken);
+
         var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(pair, interval, startTime: start, endTime: now, ct: cancellationToken);
         if (!preload.Success)
         {
