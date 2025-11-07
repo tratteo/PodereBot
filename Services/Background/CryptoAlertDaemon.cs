@@ -44,8 +44,8 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
                 <b>{(action.Side == SharedOrderSide.Buy ? "🟢 Buy" : "🔴 Sell")} Signal</b>
                 <b>Entry Kline </b>
                 Close price: <b>{action.ClosedKline.ClosePrice:0.000}</b>
-                Opened at: <b>{action.ClosedKline.OpenTime}</b>
-                Closed at: <b>{action.ClosedKline.OpenTime.AddSeconds((int)Interval)}</b>
+                Opened at: <b>{action.ClosedKline.OpenTime} UTC</b>
+                Closed at: <b>{action.ClosedKline.OpenTime.AddSeconds((int)Interval)} UTC</b>
                 
                 Stop loss: <b>{action.StopLoss:0.000}</b>
                 Take profit: <b>{action.TakeProfit:0.000}</b>

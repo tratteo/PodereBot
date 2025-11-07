@@ -40,6 +40,7 @@ internal class TradingCommand(Skin skin, ILogger<StartCommand> logger, IConfigur
             str.AppendLine("\n<b>❌ Non sei iscritto alla lista degli alerts</b>");
             kbd.AddButton("Attiva alerts", EncodeCallbackQueryData("sub"));
         }
+        kbd.AddNewRow().AddButton("Chiudi", EncodeCallbackQueryData("close"));
         str.AppendLine("Invio periodicamente agli iscritti i segnali di <b>Buy</b> e <b>Sell</b> quando le condizioni definite dalla strategia sono soddisfatte.");
 
         AttachEvents();
@@ -93,7 +94,7 @@ internal class TradingCommand(Skin skin, ILogger<StartCommand> logger, IConfigur
 
             await Arguments.Client.SendMessage(
                 Arguments.Message.Chat.Id,
-                $"Ti ho rimossso dalla lista degli alerts",
+                $"Ti ho rimosso dalla lista degli alerts",
                 disableNotification: true
             );
 
