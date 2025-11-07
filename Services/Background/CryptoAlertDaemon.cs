@@ -16,7 +16,7 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
     private readonly AbstractStrategy strategy = new AtrStochRsiEmaStrategy(new StrategyConstructorParameters([], logger));
     private UpdateSubscription? subscription;
     public KlineInterval Interval { get; init; } = KlineInterval.FifteenMinutes;
-    public string Pair { get; init; } = "SOLUSDT";
+    public string Pair { get; init; } = "SOLUSDC";
     public SharedKline? LastKline { get; private set; }
 
     private async void OnKlineUpdate(DataEvent<IBinanceStreamKlineData> kline)
