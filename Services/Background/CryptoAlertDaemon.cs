@@ -15,7 +15,7 @@ using PodereBot.Services.Hosted;
 
 internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db, BotHostedService bot) : BackgroundService
 {
-    readonly BinanceSocketClient client = new();
+    readonly BinanceSocketClient client = new((opt) => opt.RequestTimeout = TimeSpan.FromSeconds(30));
     private readonly AbstractStrategy strategy = new AtrStochRsiEmaStrategy(new StrategyConstructorParameters([], logger));
     private UpdateSubscription? subscription;
     public KlineInterval Interval { get; init; } = KlineInterval.FiveMinutes;
@@ -28,7 +28,6 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
         var sharedKline = new SharedKline(kline.Data.Data.OpenTime, kline.Data.Data.ClosePrice, kline.Data.Data.HighPrice, kline.Data.Data.LowPrice, kline.Data.Data.OpenPrice, kline.Data.Data.Volume);
         LastKline = sharedKline;
         var reports = await strategy.UpdateState(sharedKline);
-        reports = [new StrategyActionReport() { Side = SharedOrderSide.Buy, ClosedKline = sharedKline, StopLoss = 150, TakeProfit = 150 }];
         if (reports.Count > 0)
         {
             var str = new StringBuilder($"""
