@@ -10,26 +10,26 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
     private readonly Ema ema2;
     private readonly Ema ema3;
     private readonly StochRsi stochRsi;
-    private readonly float riskRewardRatio;
-    private readonly float atrFactor;
+    private readonly float tpAtrFactor;
+    private readonly float slAtrFactor;
     private readonly int intervalTolerance;
-    private readonly int lowStochRsi;
-    private readonly int highStochRsi;
+    // private readonly int lowStochRsi;
+    // private readonly int highStochRsi;
     private float? lastStochK = null;
     private float? lastStochD = null;
 
     public AtrStochRsiEmaStrategy(StrategyConstructorParameters parameters) :
         base(parameters)
     {
-        riskRewardRatio = parameters.Parameters.GetValueOrDefault("riskRewardRatio", 2F);
-        atrFactor = parameters.Parameters.GetValueOrDefault("atrFactor", 2F);
+        tpAtrFactor = parameters.Parameters.GetValueOrDefault("atrFactor", 2F);
+        slAtrFactor = parameters.Parameters.GetValueOrDefault("slAtrFactor", 3F);
         intervalTolerance = (int)parameters.Parameters.GetValueOrDefault("intervalTolerance", 2);
         atr = new Atr();
-        ema1 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema1Period", 9));
-        ema2 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema2Period", 21));
-        ema3 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema3Period", 55));
-        lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 25);
-        highStochRsi = (int)parameters.Parameters.GetValueOrDefault("highStochRsi", 75);
+        ema1 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema1Period", 8));
+        ema2 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema2Period", 14));
+        ema3 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema3Period", 50));
+        // lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 20);
+        // highStochRsi = (int)parameters.Parameters.GetValueOrDefault("highStochRsi", 80);
         stochRsi = new StochRsi();
         InjectConditions();
     }
@@ -38,7 +38,7 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
 
     protected override float GetStopLoss(SharedOrderSide side, SharedKline frame)
     {
-        var ratio = (float)(atrFactor * atr.Last)!;
+        var ratio = (float)(slAtrFactor * atr.Last)!;
         return side switch
         {
             SharedOrderSide.Buy => (float)frame.ClosePrice - ratio,
@@ -49,11 +49,11 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
 
     protected override float GetTakeProfit(SharedOrderSide side, SharedKline frame)
     {
-        var ratio = (float)(atrFactor * atr.Last)!;
+        var ratio = (float)(tpAtrFactor * atr.Last)!;
         return side switch
         {
-            SharedOrderSide.Buy => (float)frame.ClosePrice + (ratio * riskRewardRatio),
-            SharedOrderSide.Sell => (float)frame.ClosePrice - (ratio * riskRewardRatio),
+            SharedOrderSide.Buy => (float)frame.ClosePrice + ratio,
+            SharedOrderSide.Sell => (float)frame.ClosePrice - ratio,
             _ => (float)frame.ClosePrice,
         };
     }
@@ -86,11 +86,11 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
             {
                 var (stochK, stochD) = stochRsi.Last;
                 return stochRsi.Last is not (null, null) && lastStochK is not null && lastStochD is not null &&
-                lastStochK < lastStochD && stochK > stochD && stochD < lowStochRsi;
+                lastStochK < lastStochD && stochK > stochD;
             }, f =>
             {
                 var (stochK, stochD) = stochRsi.Last;
-                return stochK < stochD || stochD > lowStochRsi;
+                return stochK < stochD /*|| stochD > lowStochRsi*/;
             }, intervalTolerance));
 
         InjectShortConditions(
@@ -101,11 +101,11 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
             {
                 var (stochK, stochD) = stochRsi.Last;
                 return stochRsi.Last is not (null, null) && lastStochK is not null && lastStochD is not null &&
-                lastStochK > lastStochD && stochK < stochD && stochD > highStochRsi;
+                lastStochK > lastStochD && stochK < stochD /*&& stochD > highStochRsi*/;
             }, f =>
             {
                 var (stochK, stochD) = stochRsi.Last;
-                return stochK > stochD || stochD < highStochRsi;
+                return stochK > stochD /*|| stochD < highStochRsi*/;
             }, intervalTolerance));
     }
 }

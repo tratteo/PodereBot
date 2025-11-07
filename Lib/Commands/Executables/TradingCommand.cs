@@ -1,6 +1,4 @@
-using System.Data.Common;
 using System.Text;
-using CryptoExchange.Net.SharedApis;
 using Newtonsoft.Json;
 using PodereBot.Services;
 using Telegram.Bot;

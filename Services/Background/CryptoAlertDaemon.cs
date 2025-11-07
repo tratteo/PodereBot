@@ -2,12 +2,9 @@ using System.Text;
 using Binance.Net.Clients;
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
-using CryptoExchange.Net.Attributes;
 using CryptoExchange.Net.Objects.Sockets;
 using CryptoExchange.Net.SharedApis;
-using Microsoft.OpenApi.Extensions;
 using PodereBot.Lib;
-using PodereBot.Lib.Api;
 using PodereBot.Lib.Trading.Strategy;
 using PodereBot.Lib.Trading.Strategy.Implemented;
 using PodereBot.Services;
@@ -18,7 +15,7 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
     readonly BinanceSocketClient client = new((opt) => opt.RequestTimeout = TimeSpan.FromSeconds(30));
     private readonly AbstractStrategy strategy = new AtrStochRsiEmaStrategy(new StrategyConstructorParameters([], logger));
     private UpdateSubscription? subscription;
-    public KlineInterval Interval { get; init; } = KlineInterval.FiveMinutes;
+    public KlineInterval Interval { get; init; } = KlineInterval.FifteenMinutes;
     public string Pair { get; init; } = "SOLUSDT";
     public SharedKline? LastKline { get; private set; }
 
