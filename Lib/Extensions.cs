@@ -1,4 +1,7 @@
 ﻿using System.Reflection;
+using Binance.Net.Enums;
+using CryptoExchange.Net.Attributes;
+using Microsoft.OpenApi.Extensions;
 using PodereBot.Lib.Api;
 using PodereBot.Lib.Commands;
 using PodereBot.Services;
@@ -10,6 +13,15 @@ namespace PodereBot.Lib;
 
 public static class Extensions
 {
+    public static string GetMapName(this KlineInterval interval)
+    {
+        var attr = interval.GetAttributeOfType<MapAttribute>();
+        if (attr.Values.Length > 0)
+        {
+            return attr.Values[0];
+        }
+        return interval.GetDisplayName();
+    }
 
     public static bool IsLocal(this HttpRequest req)
     {
@@ -35,6 +47,17 @@ public static class Extensions
         }
     }
 
+    internal static async Task NotifyUsers(this TelegramBotClient client, string message, List<long> ids, ILogger? logger = null)
+    {
+        try
+        {
+            await Task.WhenAll(ids.ConvertAll(i => client.SendMessage(i, message, parseMode: ParseMode.Html)));
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError("error notifying users {e}", ex);
+        }
+    }
     internal static async Task NotifyOwners(this TelegramBotClient client, string message, ILogger? logger = null)
     {
         try

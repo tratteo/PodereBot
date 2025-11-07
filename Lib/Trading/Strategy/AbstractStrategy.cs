@@ -60,7 +60,7 @@ public abstract class AbstractStrategy(StrategyConstructorParameters parameters)
             var side = SharedOrderSide.Buy;
             var stopLoss = GetStopLoss(side, kline);
             var takeProfit = GetTakeProfit(side, kline);
-            reports.Add(new StrategyActionReport() { Side = SharedOrderSide.Buy, StopLoss = stopLoss, TakeProfit = takeProfit });
+            reports.Add(new StrategyActionReport() { Side = SharedOrderSide.Buy, StopLoss = stopLoss, TakeProfit = takeProfit, ClosedKline = kline });
             longConditions.ForEach(c => c.Reset());
         }
 
@@ -69,7 +69,7 @@ public abstract class AbstractStrategy(StrategyConstructorParameters parameters)
             var side = SharedOrderSide.Sell;
             var stopLoss = GetStopLoss(side, kline);
             var takeProfit = GetTakeProfit(side, kline);
-            reports.Add(new StrategyActionReport() { Side = SharedOrderSide.Sell, StopLoss = stopLoss, TakeProfit = takeProfit });
+            reports.Add(new StrategyActionReport() { Side = SharedOrderSide.Sell, StopLoss = stopLoss, TakeProfit = takeProfit, ClosedKline = kline });
             shortConditions.ForEach(c => c.Reset());
         }
         return reports;

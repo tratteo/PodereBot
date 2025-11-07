@@ -21,6 +21,9 @@ public class DatabaseSchema
     [JsonIgnore]
     public bool ManualHeatingActive { get; set; }
 
+    [JsonProperty]
+    public List<long> TradingAlertsSubscriptions { get; set; } = [];
+
     public DatabaseSchema Clone() =>
         new()
         {
@@ -28,7 +31,8 @@ public class DatabaseSchema
             ActiveSkin = ActiveSkin,
             HeatingProgram = HeatingProgram,
             BoilerActive = BoilerActive,
-            ManualHeatingActive = ManualHeatingActive
+            ManualHeatingActive = ManualHeatingActive,
+            TradingAlertsSubscriptions = TradingAlertsSubscriptions
         };
 }
 

@@ -21,15 +21,15 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
     public AtrStochRsiEmaStrategy(StrategyConstructorParameters parameters) :
         base(parameters)
     {
-        riskRewardRatio = parameters.Parameters.GetValueOrDefault("riskRewardRatio", 4F);
-        atrFactor = parameters.Parameters.GetValueOrDefault("atrFactor", 1F);
+        riskRewardRatio = parameters.Parameters.GetValueOrDefault("riskRewardRatio", 2F);
+        atrFactor = parameters.Parameters.GetValueOrDefault("atrFactor", 2F);
         intervalTolerance = (int)parameters.Parameters.GetValueOrDefault("intervalTolerance", 2);
         atr = new Atr();
-        ema1 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema1Period", 8));
-        ema2 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema2Period", 14));
-        ema3 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema3Period", 50));
-        lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 20);
-        highStochRsi = (int)parameters.Parameters.GetValueOrDefault("highStochRsi", 70);
+        ema1 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema1Period", 9));
+        ema2 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema2Period", 21));
+        ema3 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema3Period", 55));
+        lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 25);
+        highStochRsi = (int)parameters.Parameters.GetValueOrDefault("highStochRsi", 75);
         stochRsi = new StochRsi();
         InjectConditions();
     }

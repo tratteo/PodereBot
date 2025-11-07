@@ -2,11 +2,12 @@ using CryptoExchange.Net.SharedApis;
 
 namespace PodereBot.Lib.Trading.Strategy;
 
-public readonly struct StrategyActionReport(SharedOrderSide side, float stopLoss, float takeProfit)
+public readonly struct StrategyActionReport()
 {
-    public SharedOrderSide Side { get; init; } = side;
+    public required SharedOrderSide Side { get; init; }
 
-    public float StopLoss { get; init; } = stopLoss;
-    public float TakeProfit { get; init; } = takeProfit;
+    public required SharedKline ClosedKline { get; init; }
+    public required float StopLoss { get; init; }
+    public required float TakeProfit { get; init; }
 
 }

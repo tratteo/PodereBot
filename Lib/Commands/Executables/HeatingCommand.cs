@@ -96,7 +96,7 @@ internal class HeatingCommand(
         {
             html.AppendLine("❄️ Caldaia <b>spenta</b>");
         }
-        html.Append(new string('_', 25));
+        html.Append(new string('_', 30));
         return html;
     }
 

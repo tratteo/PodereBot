@@ -2,17 +2,19 @@ using System.Text;
 using Binance.Net.Clients;
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
-using CryptoExchange.Net.Objects;
+using CryptoExchange.Net.Attributes;
 using CryptoExchange.Net.Objects.Sockets;
 using CryptoExchange.Net.SharedApis;
+using Microsoft.OpenApi.Extensions;
 using PodereBot.Lib;
+using PodereBot.Lib.Api;
 using PodereBot.Lib.Trading.Strategy;
 using PodereBot.Lib.Trading.Strategy.Implemented;
+using PodereBot.Services;
 using PodereBot.Services.Hosted;
 
-internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedService bot) : IHostedService
+internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db, BotHostedService bot) : BackgroundService
 {
-
     readonly BinanceSocketClient client = new();
     private readonly AbstractStrategy strategy = new AtrStochRsiEmaStrategy(new StrategyConstructorParameters([], logger));
     private UpdateSubscription? subscription;
@@ -22,37 +24,40 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
 
     private async void OnKlineUpdate(DataEvent<IBinanceStreamKlineData> kline)
     {
-        if (!kline.Data.Data.Final) return;
+        //if (!kline.Data.Data.Final) return;
         var sharedKline = new SharedKline(kline.Data.Data.OpenTime, kline.Data.Data.ClosePrice, kline.Data.Data.HighPrice, kline.Data.Data.LowPrice, kline.Data.Data.OpenPrice, kline.Data.Data.Volume);
         LastKline = sharedKline;
         var reports = await strategy.UpdateState(sharedKline);
+        reports = [new StrategyActionReport() { Side = SharedOrderSide.Buy, ClosedKline = sharedKline, StopLoss = 150, TakeProfit = 150 }];
         if (reports.Count > 0)
         {
             var str = new StringBuilder($"""
             <b>💸 Crypto Position Alert</b>
-
             Strategy: <b>AtrStochRsiEmaStrategy</b>
-            Timeframe: <b>1m</b>
+            Timeframe: <b>{Interval.GetMapName()}</b>
             Pair: <b>SOL/USDT</b>
             """);
+            str.AppendLine("");
             foreach (var action in reports)
             {
-                if (action.Side == SharedOrderSide.Buy)
-                {
-                    str.AppendLine($"\nSignal: <b>🔼 Buy</b>");
-                }
-                else
-                {
-                    str.AppendLine($"\nSignal: <b>🔽 Sell</b>");
-                }
-                str.AppendLine($"SL: <b>{action.StopLoss}</b>");
-                str.AppendLine($"TP: <b>{action.TakeProfit}</b>\n");
+                str.AppendLine($"""
+
+                <b>{(action.Side == SharedOrderSide.Buy ? "🟢 Buy" : "🔴 Sell")} Signal</b>
+                <b>Entry Kline </b>
+                Close price: <b>{action.ClosedKline.ClosePrice:0.000}</b>
+                Opened at: <b>{action.ClosedKline.OpenTime}</b>
+                Closed at: <b>{action.ClosedKline.OpenTime.AddSeconds((int)Interval)}</b>
+                
+                Stop loss: <b>{action.StopLoss:0.000}</b>
+                Take profit: <b>{action.TakeProfit:0.000}</b>
+                
+                """);
             }
-            await bot.Client.NotifyOwners(str.ToString(), logger);
+            await bot.Client.NotifyUsers(str.ToString(), db.Data.TradingAlertsSubscriptions, logger);
         }
     }
 
-    async Task IHostedService.StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow.AddSeconds(-(int)Interval);
         var start = now.AddSeconds(-(int)Interval * 50);
@@ -87,7 +92,7 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, BotHostedSer
     }
 
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public override Task StopAsync(CancellationToken cancellationToken)
     {
         if (subscription != null)
         {
