@@ -66,19 +66,21 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
         }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    private async void ConnectRoutine(CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow.AddSeconds(-(int)Interval);
         var start = now.AddSeconds(-(int)Interval * 50);
-        await Task.Delay(2000, cancellationToken);
+        var attemptMs = 5000;
+        while (true)
+        {
+            var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(Pair, Interval, startTime: start, endTime: now, ct: cancellationToken);
+            if (!preload.Success)
+            {
+                logger.LogWarning("unable to preload to klines, error: {t}, code: {c}, mesage: {m}, description: {d}, ex: {e}", preload.Error?.ErrorType, preload.Error?.ErrorCode, preload.Error?.Message, preload.Error?.ErrorDescription, preload.Error?.Exception);
+                await Task.Delay(attemptMs, cancellationToken);
+                continue;
+            }
 
-        var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(Pair, Interval, startTime: start, endTime: now, ct: cancellationToken);
-        if (!preload.Success)
-        {
-            logger.LogWarning("unable to preload to klines, error: {t}, code: {c}, mesage: {m}, description: {d}, ex: {e}", preload.Error?.ErrorType, preload.Error?.ErrorCode, preload.Error?.Message, preload.Error?.ErrorDescription, preload.Error?.Exception);
-        }
-        else
-        {
             foreach (var kline in preload.Data.Result)
             {
                 _ = await strategy.UpdateState(new SharedKline(kline.OpenTime, kline.ClosePrice, kline.HighPrice, kline.LowPrice, kline.OpenPrice, kline.Volume));
@@ -86,18 +88,27 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
             var last = preload.Data.Result.Last();
             LastKline = new SharedKline(last.OpenTime, last.ClosePrice, last.HighPrice, last.LowPrice, last.OpenPrice, last.Volume);
             logger.LogInformation("preloaded strategy with {l} klines, last: {l}", preload.Data.Result.Length, LastKline);
+            break;
         }
 
-        var sub = await client.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(Pair, Interval, OnKlineUpdate, ct: cancellationToken);
-        if (!sub.Success)
+        while (true)
         {
-            logger.LogWarning("unable to subscribe to kline websocket");
-        }
-        else
-        {
+            var sub = await client.SpotApi.ExchangeData.SubscribeToKlineUpdatesAsync(Pair, Interval, OnKlineUpdate, ct: cancellationToken);
+            if (!sub.Success)
+            {
+                logger.LogWarning("unable to subscribe to kline websocket, error: {t}, code: {c}, mesage: {m}, description: {d}, ex: {e}", sub.Error?.ErrorType, sub.Error?.ErrorCode, sub.Error?.Message, sub.Error?.ErrorDescription, sub.Error?.Exception);
+                await Task.Delay(attemptMs, cancellationToken);
+                continue;
+            }
             subscription = sub.Data;
+            logger.LogInformation("subscribed to klines websocket");
+            break;
         }
+    }
 
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    {
+        ConnectRoutine(cancellationToken);
     }
 
 
