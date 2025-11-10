@@ -25,28 +25,41 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
         var sharedKline = new SharedKline(kline.Data.Data.OpenTime, kline.Data.Data.ClosePrice, kline.Data.Data.HighPrice, kline.Data.Data.LowPrice, kline.Data.Data.OpenPrice, kline.Data.Data.Volume);
         LastKline = sharedKline;
         var reports = await strategy.UpdateState(sharedKline);
+
+
         if (reports.Count > 0)
         {
             var str = new StringBuilder($"""
             <b>💸 Crypto Position Alert</b>
             Strategy: <b>AtrStochRsiEmaStrategy</b>
             Timeframe: <b>{Interval.GetMapName()}</b>
-            Pair: <b>SOL/USDT</b>
+            Pair: <b>{Pair}</b>
             """);
             str.AppendLine("");
             foreach (var action in reports)
             {
+                float tpPct;
+                float slPct;
+                if (action.Side == SharedOrderSide.Buy)
+                {
+                    tpPct = 100 * ((action.TakeProfit / (float)action.ClosedKline.ClosePrice) - 1);
+                    slPct = 100 * (1 - (action.StopLoss / (float)action.ClosedKline.ClosePrice));
+                }
+                else
+                {
+                    tpPct = 100 * (1 - (action.TakeProfit / (float)action.ClosedKline.ClosePrice));
+                    slPct = 100 * ((action.StopLoss / (float)action.ClosedKline.ClosePrice) - 1);
+                }
                 str.AppendLine($"""
 
                 <b>{(action.Side == SharedOrderSide.Buy ? "🟢 Buy" : "🔴 Sell")} Signal</b>
                 <b>Entry Kline </b>
-                Close price: <b>{action.ClosedKline.ClosePrice:0.000}</b>
+                Price: <b>{action.ClosedKline.ClosePrice:0.000}</b>
                 Opened at: <b>{action.ClosedKline.OpenTime} UTC</b>
                 Closed at: <b>{action.ClosedKline.OpenTime.AddSeconds((int)Interval)} UTC</b>
                 
-                Stop loss: <b>{action.StopLoss:0.000}</b>
-                Take profit: <b>{action.TakeProfit:0.000}</b>
-                
+                Take profit: <b>{action.TakeProfit:0.000} ({tpPct:0.00}%)</b>
+                Stop loss: <b>{action.StopLoss:0.000} ({slPct:0.00}%)</b>
                 """);
             }
             await bot.Client.NotifyUsers(str.ToString(), db.Data.TradingAlertsSubscriptions, logger);
@@ -57,7 +70,7 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
     {
         var now = DateTime.UtcNow.AddSeconds(-(int)Interval);
         var start = now.AddSeconds(-(int)Interval * 50);
-        //await Task.Delay(5000, cancellationToken);
+        await Task.Delay(2000, cancellationToken);
 
         var preload = await client.SpotApi.ExchangeData.GetKlinesAsync(Pair, Interval, startTime: start, endTime: now, ct: cancellationToken);
         if (!preload.Success)
