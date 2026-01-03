@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using Humanizer;
 using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -29,7 +28,7 @@ internal class TemperaturesCommand(
     private string GetTemperatureString(string name, float? temperature, DateTime? timestamp = null)
     {
         var tempStr =
-            $"<b>{(temperature != null ? $"{temperature:F2}°" : "non disponibile 😵")} {(timestamp != null ? $"({timestamp.Humanize(culture: new CultureInfo("it-IT"))})" : "")}</b>";
+            $"<b>{(temperature != null ? $"{temperature:F2}°" : "non disponibile 😵")} {(timestamp != null ? $"({timestamp.Humanize()})" : "")}</b>";
         return string.Format("{0} {1}", name, tempStr.PadLeft(40));
     }
 

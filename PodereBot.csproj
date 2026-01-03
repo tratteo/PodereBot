@@ -30,15 +30,13 @@
   <ItemGroup>
     <PackageReference Include="CryptoClients.Net" Version="4.0.4" />
     <PackageReference Include="DotNetEnv" Version="3.1.1" />
-    <PackageReference Include="Humanizer" Version="3.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
     <PackageReference Include="System.Device.Gpio" Version="4.0.1" />
     <PackageReference Include="System.IO.Ports" Version="10.0.1" />
-    <PackageReference Include="Telegram.Bot" Version="22.7.6" />
-  </ItemGroup>
+    <PackageReference Include="Telegram.Bot" Version="22.8.1" /></ItemGroup>
 
 
 </Project>

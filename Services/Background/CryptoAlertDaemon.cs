@@ -22,7 +22,7 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
     private async void OnKlineUpdate(DataEvent<IBinanceStreamKlineData> kline)
     {
         if (!kline.Data.Data.Final) return;
-        var sharedKline = new SharedKline(kline.Data.Data.OpenTime, kline.Data.Data.ClosePrice, kline.Data.Data.HighPrice, kline.Data.Data.LowPrice, kline.Data.Data.OpenPrice, kline.Data.Data.Volume);
+        var sharedKline = new SharedKline(null, Pair, kline.Data.Data.OpenTime, kline.Data.Data.ClosePrice, kline.Data.Data.HighPrice, kline.Data.Data.LowPrice, kline.Data.Data.OpenPrice, kline.Data.Data.Volume);
         LastKline = sharedKline;
         var reports = await strategy.UpdateState(sharedKline);
 
@@ -83,10 +83,10 @@ internal class CryptoAlertDaemon(ILogger<CryptoAlertDaemon> logger, Database db,
 
             foreach (var kline in preload.Data.Result)
             {
-                _ = await strategy.UpdateState(new SharedKline(kline.OpenTime, kline.ClosePrice, kline.HighPrice, kline.LowPrice, kline.OpenPrice, kline.Volume));
+                _ = await strategy.UpdateState(new SharedKline(null, Pair, kline.OpenTime, kline.ClosePrice, kline.HighPrice, kline.LowPrice, kline.OpenPrice, kline.Volume));
             }
             var last = preload.Data.Result.Last();
-            LastKline = new SharedKline(last.OpenTime, last.ClosePrice, last.HighPrice, last.LowPrice, last.OpenPrice, last.Volume);
+            LastKline = new SharedKline(null, Pair, last.OpenTime, last.ClosePrice, last.HighPrice, last.LowPrice, last.OpenPrice, last.Volume);
             logger.LogInformation("preloaded strategy with {l} klines, last: {l}", preload.Data.Result.Length, LastKline);
             break;
         }

@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using Binance.Net.Enums;
 using CryptoExchange.Net.Attributes;
-using Microsoft.OpenApi.Extensions;
+using Microsoft.OpenApi;
 using PodereBot.Lib.Api;
 using PodereBot.Lib.Commands;
 using PodereBot.Services;
@@ -16,7 +16,7 @@ public static class Extensions
     public static string GetMapName(this KlineInterval interval)
     {
         var attr = interval.GetAttributeOfType<MapAttribute>();
-        if (attr.Values.Length > 0)
+        if (attr?.Values.Length > 0)
         {
             return attr.Values[0];
         }
@@ -83,6 +83,46 @@ public static class Extensions
         var msg = await msgTask;
         command.AddToRemove(msg);
         return msg;
+    }
+
+    internal static string Humanize(this DateTime? input)
+    {
+        if (input == null) return "";
+        TimeSpan ts = (TimeSpan)(DateTime.Now - input);
+        double delta = Math.Abs(ts.TotalSeconds);
+
+        if (delta < 1)
+            return "proprio ora";
+
+        if (delta < 60)
+            return ts.Seconds == 1 ? "un secondo fa" : ts.Seconds + " secondi fa";
+
+        if (delta < 120)
+            return "un minuto fa";
+
+        if (delta < 2700) // 45 minuti
+            return ts.Minutes + " minuti fa";
+
+        if (delta < 5400) // 90 minuti
+            return "un'ora fa";
+
+        if (delta < 86400) // 24 ore
+            return ts.Hours + " ore fa";
+
+        if (delta < 172800) // 48 ore
+            return "ieri";
+
+        if (delta < 2592000) // 30 giorni
+            return ts.Days + " giorni fa";
+
+        if (delta < 31104000) // 12 mesi
+        {
+            int months = Convert.ToInt32(Math.Floor((double)ts.Days / 30));
+            return months <= 1 ? "un mese fa" : months + " mesi fa";
+        }
+
+        int years = Convert.ToInt32(Math.Floor((double)ts.Days / 365));
+        return years <= 1 ? "un anno fa" : years + " anni fa";
     }
 
     internal static object ReflectSchema(this Type type)
