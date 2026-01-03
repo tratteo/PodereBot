@@ -13,8 +13,8 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
     private readonly float tpAtrFactor;
     private readonly float slAtrFactor;
     private readonly int intervalTolerance;
-    // private readonly int lowStochRsi;
-    // private readonly int highStochRsi;
+    private readonly int lowStochRsi;
+    private readonly int highStochRsi;
     private float? lastStochK = null;
     private float? lastStochD = null;
 
@@ -23,13 +23,13 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
     {
         tpAtrFactor = parameters.Parameters.GetValueOrDefault("atrFactor", 2F);
         slAtrFactor = parameters.Parameters.GetValueOrDefault("slAtrFactor", 3F);
-        intervalTolerance = (int)parameters.Parameters.GetValueOrDefault("intervalTolerance", 2);
+        intervalTolerance = (int)parameters.Parameters.GetValueOrDefault("intervalTolerance", 1);
         atr = new Atr();
         ema1 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema1Period", 8));
         ema2 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema2Period", 14));
         ema3 = new Ema((int)parameters.Parameters.GetValueOrDefault("ema3Period", 50));
-        // lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 20);
-        // highStochRsi = (int)parameters.Parameters.GetValueOrDefault("highStochRsi", 80);
+        lowStochRsi = (int)parameters.Parameters.GetValueOrDefault("lowStochRsi", 25);
+        highStochRsi = (int)parameters.Parameters.GetValueOrDefault("highStochRsi", 75);
         stochRsi = new StochRsi();
         InjectConditions();
     }
@@ -86,11 +86,11 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
             {
                 var (stochK, stochD) = stochRsi.Last;
                 return stochRsi.Last is not (null, null) && lastStochK is not null && lastStochD is not null &&
-                lastStochK < lastStochD && stochK > stochD;
+                lastStochK < lastStochD && stochK > stochD && stochD <= lowStochRsi;
             }, f =>
             {
                 var (stochK, stochD) = stochRsi.Last;
-                return stochK < stochD /*|| stochD > lowStochRsi*/;
+                return stochK < stochD || stochD > lowStochRsi;
             }, intervalTolerance));
 
         InjectShortConditions(
@@ -101,11 +101,11 @@ public class AtrStochRsiEmaStrategy : AbstractStrategy
             {
                 var (stochK, stochD) = stochRsi.Last;
                 return stochRsi.Last is not (null, null) && lastStochK is not null && lastStochD is not null &&
-                lastStochK > lastStochD && stochK < stochD /*&& stochD > highStochRsi*/;
+                lastStochK > lastStochD && stochK < stochD && stochD >= highStochRsi;
             }, f =>
             {
                 var (stochK, stochD) = stochRsi.Last;
-                return stochK > stochD /*|| stochD < highStochRsi*/;
+                return stochK > stochD || stochD < highStochRsi;
             }, intervalTolerance));
     }
 }
