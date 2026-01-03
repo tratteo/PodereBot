@@ -88,7 +88,7 @@ public static class Extensions
     internal static string Humanize(this DateTime? input)
     {
         if (input == null) return "";
-        TimeSpan ts = (TimeSpan)(DateTime.Now - input);
+        TimeSpan ts = (TimeSpan)(DateTime.UtcNow - input);
         double delta = Math.Abs(ts.TotalSeconds);
 
         if (delta < 1)
