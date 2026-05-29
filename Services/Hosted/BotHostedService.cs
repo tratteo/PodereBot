@@ -83,11 +83,9 @@ internal class BotHostedService : IHostedService
             }
         }
         else
-        { // This is a normal text message
-            var responder = services.GetService<ConversationalResponder>();
-            if (responder == null)
-                return;
-            var _ = responder.Process(Client, msg);
+        {
+            var aiChat = services.GetRequiredService<AiChatService>();
+            await aiChat.ProcessMessageAsync(Client, msg);
         }
     }
 }

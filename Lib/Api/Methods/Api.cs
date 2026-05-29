@@ -44,7 +44,7 @@ internal class Api : IEndpoint
         temperatureDriver.PostTemperatureReading(
             new TemperatureReading()
             {
-                Id = body.SensorId!,
+                Id = body.SensorId ?? "",
                 Temperature = (float)body.Temperature!,
                 Timestamp = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds((int)body.Timestamp!),
                 Location = body.Location!

@@ -1,7 +1,12 @@
 ﻿using System.Globalization;
+using Microsoft.Extensions.AI;
+using ModelContextProtocol.Server;
+using System.ClientModel;
+using OpenAI;
 using PodereBot.Lib;
 using PodereBot.Lib.Api;
 using PodereBot.Services;
+using PodereBot.Services.AiTools;
 using PodereBot.Services.Hosted;
 
 Console.Title = "Podere Bot";
@@ -37,7 +42,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<GateDriver>();
 builder.Services.AddSingleton<Skin>();
 builder.Services.AddSingleton<HeatingDriver>();
-builder.Services.AddTransient<ConversationalResponder>();
 builder.Services.AddSingleton<Database>();
 
 builder.Services.AddHostedService<HeatingProgramDaemon>();
@@ -48,12 +52,42 @@ builder.Services.AddHostedService(p => p.GetRequiredService<CryptoAlertDaemon>()
 builder.Services.AddSingleton<BotHostedService>();
 builder.Services.AddHostedService(p => p.GetRequiredService<BotHostedService>());
 
-// builder.Services.AddHostedService<BotHostedService>();
+// ===== AI Configuration =====
+var aiSection = builder.Configuration.GetSection("AI");
+var endpoint = aiSection["Endpoint"]!;
+var model = aiSection["Model"]!;
+var zenApiKey = builder.Configuration.GetValue<string>("ZEN_API_KEY")!;
+
+var promptPath = Path.Combine(AppContext.BaseDirectory, "Prompts", "system-prompt.md");
+if (File.Exists(promptPath))
+{
+    builder.Configuration["AI:SystemPrompt"] = File.ReadAllText(promptPath);
+}
+
+builder.Services.AddSingleton<IChatClient>(sp =>
+{
+    var openAiClient = new OpenAIClient(new ApiKeyCredential(zenApiKey), new OpenAIClientOptions { Endpoint = new Uri(endpoint) });
+    var innerClient = openAiClient.GetChatClient(model).AsIChatClient();
+    return new ChatClientBuilder(innerClient).UseFunctionInvocation().Build(sp);
+});
+
+builder.Services.AddSingleton<AiToolRegistry>();
+builder.Services.AddTransient<AiChatService>();
+
+// ===== MCP Configuration =====
+#pragma warning disable ASP0000 // Intentional: need tool registry for MCP, all deps are singletons
+var earlySp = builder.Services.BuildServiceProvider();
+#pragma warning restore ASP0000
+builder.Services
+    .AddMcpServer()
+    .WithHttpTransport(o => o.Stateless = true)
+    .WithTools(earlySp.GetRequiredService<AiToolRegistry>().AllMcpServerTools);
 
 var app = builder.Build();
 
 app.Use(Middleware.RestrictToLocalNetwork);
 app.UseApiEndpoints();
+app.MapMcp("/mcp");
 app.UseSwagger();
 app.UseSwaggerUI();
 
