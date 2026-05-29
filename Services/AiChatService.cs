@@ -12,11 +12,16 @@ internal class AiChatService(
     ILogger<AiChatService> logger
 )
 {
+    private static readonly AsyncLocal<long?> currentUserId = new();
+
+    internal static long? GetCurrentUserId() => currentUserId.Value;
+
     public async Task ProcessMessageAsync(ITelegramBotClient botClient, Message message)
     {
         if (message.Text == null)
             return;
 
+        currentUserId.Value = message.From?.Id;
         try
         {
             var systemPrompt = configuration.GetSection("AI")["SystemPrompt"] ?? "";
@@ -45,6 +50,10 @@ internal class AiChatService(
         {
             logger.LogError(ex, "AI chat error for user {userId}", message.From?.Id);
             await botClient.SendMessage(message.Chat.Id, "Non ho potuto elaborare la richiesta. Qualcosa è andato storto.");
+        }
+        finally
+        {
+            currentUserId.Value = null;
         }
     }
 }

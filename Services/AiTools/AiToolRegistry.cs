@@ -7,6 +7,7 @@ using Microsoft.Extensions.AI;
 using ModelContextProtocol.Server;
 using PodereBot.Lib.Common;
 using PodereBot.Services.Hosted;
+using PodereBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -67,35 +68,35 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long? userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId) && !CanNonAdminOpen(db))
+                    if (!AdminAuthorization.TryAuthorize(configuration) && !CanNonAdminOpen(db))
                         return "I cancelli sono bloccati al momento. Solo gli amministratori possono aprirli.";
                     gateDriver.Open(GateId.automatic).GetAwaiter().GetResult();
                     return "Cancello automatico aperto.";
                 },
-                new AIFunctionFactoryOptions { Name = "open_automatic_gate", Description = "Apre il cancello automatico. Se userId è admin apre sempre, altrimenti verifica se l'accesso è abilitato" }
+                new AIFunctionFactoryOptions { Name = "open_automatic_gate", Description = "Apre il cancello automatico. Solo admin può aprirlo se i cancelli non sono sbloccati." }
             )
         );
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long? userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId) && !CanNonAdminOpen(db))
+                    if (!AdminAuthorization.TryAuthorize(configuration) && !CanNonAdminOpen(db))
                         return "I cancelli sono bloccati al momento. Solo gli amministratori possono aprirli.";
                     gateDriver.Open(GateId.pedestrian).GetAwaiter().GetResult();
                     return "Cancello pedonale aperto.";
                 },
-                new AIFunctionFactoryOptions { Name = "open_pedestrian_gate", Description = "Apre il cancello pedonale. Se userId è admin apre sempre, altrimenti verifica se l'accesso è abilitato" }
+                new AIFunctionFactoryOptions { Name = "open_pedestrian_gate", Description = "Apre il cancello pedonale. Solo admin può aprirlo se i cancelli non sono sbloccati." }
             )
         );
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     gateDriver.ToggleLights().GetAwaiter().GetResult();
                     return "Ho attivato/disattivato le luci dei cancelli. Non posso sapere in che stato sono.";
@@ -108,9 +109,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     var expiration = db.Data.GatesOpenAccessExpirationDate;
                     if (expiration == null || expiration < DateTime.Now)
@@ -123,9 +124,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId, int hours) =>
+                (int hours) =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     if (hours < 1 || hours > 24)
                         return "Le ore devono essere tra 1 e 24.";
@@ -139,9 +140,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     db.Edit(d => d.GatesOpenAccessExpirationDate = null);
                     return "Cancelli bloccati. Solo gli amministratori possono utilizzarli.";
@@ -154,9 +155,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                async (long userId) =>
+                async () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     var sb = new StringBuilder();
                     var temp = await heatingDriver.GetOperationalTemperature();
@@ -187,9 +188,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                async (long userId, string program) =>
+                async (string program) =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     var splits = program.Split('/');
                     var intervals = new List<HeatingInterval>();
@@ -233,9 +234,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     heatingDriver.SwitchHeating(true);
                     db.Edit(d => d.ManualHeatingActive = true);
@@ -247,9 +248,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     heatingDriver.SwitchHeating(false);
                     db.Edit(d => d.ManualHeatingActive = false);
@@ -261,9 +262,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     db.Edit(d => d.HeatingProgram = null);
                     heatingDriver.SwitchHeating(false);
@@ -275,9 +276,9 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
-                    if (!AdminAuthorization.TryAuthorize(configuration, userId))
+                    if (!AdminAuthorization.TryAuthorize(configuration))
                         return "Non autorizzato: servono permessi admin.";
                     if (db.Data.HeatingProgram == null)
                         return "Nessun programma da sospendere.";
@@ -396,37 +397,43 @@ internal sealed class AiToolRegistry
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
+                    var userId = AiChatService.GetCurrentUserId();
+                    if (userId == null)
+                        return "Impossibile identificare l'utente.";
                     var subs = db.Data.TradingAlertsSubscriptions ?? [];
-                    if (subs.Contains(userId))
-                        return $"L'utente {userId} è già iscritto agli alert.";
+                    if (subs.Contains(userId.Value))
+                        return "Sei già iscritto agli alert.";
                     db.Edit(d =>
                     {
                         d.TradingAlertsSubscriptions ??= [];
-                        d.TradingAlertsSubscriptions.Add(userId);
+                        d.TradingAlertsSubscriptions.Add(userId.Value);
                     });
-                    return $"Utente {userId} iscritto agli alert di trading.";
+                    return "Iscritto agli alert di trading.";
                 },
-                new AIFunctionFactoryOptions { Name = "subscribe_trading_alerts", Description = "Iscrive un utente agli alert di trading" }
+                new AIFunctionFactoryOptions { Name = "subscribe_trading_alerts", Description = "Iscrive l'utente corrente agli alert di trading" }
             )
         );
 
         functions.Add(
             AIFunctionFactory.Create(
-                (long userId) =>
+                () =>
                 {
+                    var userId = AiChatService.GetCurrentUserId();
+                    if (userId == null)
+                        return "Impossibile identificare l'utente.";
                     var subs = db.Data.TradingAlertsSubscriptions ?? [];
-                    if (!subs.Contains(userId))
-                        return $"L'utente {userId} non è iscritto agli alert.";
+                    if (!subs.Contains(userId.Value))
+                        return "Non sei iscritto agli alert.";
                     db.Edit(d =>
                     {
                         d.TradingAlertsSubscriptions ??= [];
-                        d.TradingAlertsSubscriptions.RemoveAll(id => id == userId);
+                        d.TradingAlertsSubscriptions.RemoveAll(id => id == userId.Value);
                     });
-                    return $"Utente {userId} rimosso dagli alert di trading.";
+                    return "Rimosso dagli alert di trading.";
                 },
-                new AIFunctionFactoryOptions { Name = "unsubscribe_trading_alerts", Description = "Rimuove un utente dagli alert di trading" }
+                new AIFunctionFactoryOptions { Name = "unsubscribe_trading_alerts", Description = "Rimuove l'utente corrente dagli alert di trading" }
             )
         );
 
