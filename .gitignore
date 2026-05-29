@@ -26,6 +26,7 @@ nupkg/
 x64/
 x86/
 build/
+buildruntimes/
 bld/
 [Bb]in/
 [Oo]bj/
