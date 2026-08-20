@@ -26,7 +26,8 @@ internal class HeatingDriver(
     public async Task<float?> GetOperationalTemperature(CancellationToken? cancellationToken = null)
     {
         var readings = temperatureReader.GetExternalTemperatureReadings(readingsTimespan);
-        var temperatures = readings.ConvertAll(r => r.Temperature);
+        var operationalReadings = readings.Where(r => !r.Informational).ToList();
+        var temperatures = operationalReadings.ConvertAll(r => r.Temperature);
         var localTemperature = await temperatureReader.GetLocalTemperature(cancellationToken);
         if (localTemperature != null)
         {
@@ -45,8 +46,8 @@ internal class HeatingDriver(
         if (temperatures.Count > 0)
         {
             logger.LogDebug(
-                "{c} external temp readings [avg: {r}, min: {m}, max: {min}]",
-                readings.Count,
+                "{c} operational temp readings [avg: {r}, min: {m}, max: {min}]",
+                operationalReadings.Count,
                 temperatures.Average(),
                 temperatures.Min(),
                 temperatures.Max()

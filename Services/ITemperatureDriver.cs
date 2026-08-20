@@ -6,6 +6,7 @@ internal record TemperatureReading
 
     public required string Id { get; init; }
     public required string Location { get; init; }
+    public bool Informational { get; init; }
 }
 
 internal interface ITemperatureDriver

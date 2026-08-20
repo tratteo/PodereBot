@@ -25,6 +25,8 @@ internal record PostTemperatureBody
     [Required]
     public string? Location { get; init; }
     public string? Com { get; init; }
+
+    public bool Informational { get; init; }
 }
 
 internal class Api : IEndpoint
@@ -47,7 +49,8 @@ internal class Api : IEndpoint
                 Id = body.SensorId ?? "",
                 Temperature = (float)body.Temperature!,
                 Timestamp = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds((int)body.Timestamp!),
-                Location = body.Location!
+                Location = body.Location!,
+                Informational = body.Informational
             }
         );
 
